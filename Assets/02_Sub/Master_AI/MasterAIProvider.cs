@@ -75,6 +75,19 @@ public class MasterAIProvider : ASingletone<MasterAIProvider>
 
     #region 외부 API
 
+    public void ReportPlayerLoitering(ZONE_ID zoneId , float stayTimeDelta)
+    {
+        // stayTimeDelta: 방금 이만큼 더 머물렀다 (예: 1초)
+        // 의심도 누적 로직은 맘대로 조정 가능
+        float tAmount = stayTimeDelta; // 또는 stayTimeDelta * 어떤계수
+
+        AddSuspicion(zoneId , tAmount);
+
+        // 머무르기만 해도 가끔 두리뭉술 힌트를 던지고 싶다면:
+        Vector3 tHintPos = GetRoughHintPosition(zoneId);
+        OnRoughHintUpdated?.Invoke(tHintPos);
+    }
+
     // CCTV / 추격 AI에게 발각되었을 경우 정확한 좌표 전달
     public void ReportExactPlayerPosition(ZONE_ID zoneId, Vector3 playerPos)
     {
