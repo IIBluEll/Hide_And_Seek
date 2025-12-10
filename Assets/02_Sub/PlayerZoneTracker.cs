@@ -2,12 +2,14 @@ using UnityEngine;
 
 public class PlayerZoneTracker : MonoBehaviour
 {
-    [Header("Ã¼·ù ÆÇÁ¤ ¼³Á¤")]
-    public float LoiterThreshold = 3f;     // ÀÌ ½Ã°£ ÀÌ»ó ¸Ó¹°¸é ¡°¼ö»ó¡± ÆÇÁ¤ ½ÃÀÛ
-    public float ReportInterval = 1f;      // ¸î ÃÊ¸¶´Ù MasterAI¿¡ º¸°íÇÒÁö
+    [Header("ì²´ë¥˜ íŒì • ì„¤ì •")]
+    public float LoiterThreshold = 3f;     // ì´ ì‹œê°„ ì´ìƒ ë¨¸ë¬´ë¥´ë©´ 'ìˆ˜ìƒ' íŒì • ì‹œì‘
+    public float ReportInterval = 1f;      // MasterAIì— ë³´ê³ í•˜ëŠ” ì£¼ê¸°(ì´ˆ)
 
     private ZoneArea _currentZone;
+
     private float _stayTimer;
+
     private float _nextReportTime;
 
     private void Update()
@@ -19,22 +21,21 @@ public class PlayerZoneTracker : MonoBehaviour
 
         _stayTimer += Time.deltaTime;
 
-        // ¾ÆÁ÷ ÀÏÁ¤ ½Ã°£ ÀÌ»ó ¸Ó¹«¸£Áö ¾Ê¾Ò´Ù¸é º¸°í X
+        // ì²´ë¥˜ ì‹œê°„ì´ ê¸°ì¤€ì¹˜ ë¯¸ë§Œì´ë©´ ë³´ê³ í•˜ì§€ ì•ŠìŒ
         if ( _stayTimer < LoiterThreshold )
         {
             return;
         }
 
-        // ReportInterval ÁÖ±â·Î MasterAI¿¡ Ã¼·ù º¸°í
+        // ReportInterval ì£¼ê¸°ë¡œ MasterAIì— ì²´ë¥˜ ìƒíƒœ ë³´ê³ 
         if ( Time.time >= _nextReportTime )
         {
             if ( MasterAIProvider.Instance != null )
             {
-                // ¿©±â¼­´Â "ÃÖ±Ù ReportInterval µ¿¾È ¸Ó¹® ½Ã°£" Á¤µµ·Î º¸°í
+                // ìµœê·¼ ReportInterval ë™ì•ˆ ë¨¸ë¬¸ ì‹œê°„ìœ¼ë¡œ ë³´ê³ 
                 float tDeltaStay = ReportInterval;
                 MasterAIProvider.Instance.ReportPlayerLoitering(_currentZone.ZoneId , tDeltaStay);
             }
-
             _nextReportTime = Time.time + ReportInterval;
         }
     }
@@ -50,8 +51,8 @@ public class PlayerZoneTracker : MonoBehaviour
         _currentZone = tZone;
         _stayTimer = 0f;
         _nextReportTime = Time.time + ReportInterval;
-        // ÇÊ¿äÇÏ¸é Dev ·Î±×
-         DevConsoleProvider.Log($"[PlayerZone] Enter zone: {_currentZone.ZoneId}");
+        // í•„ìš” ì‹œ ê°œë°œìš© ë¡œê·¸ ë‚¨ê¹€
+        DevConsoleProvider.Log($"[PlayerZone] Enter zone: {_currentZone.ZoneId}");
         Debug.Log($"[PlayerZone] Enter zone: {_currentZone.ZoneId}");
     }
 
@@ -62,14 +63,14 @@ public class PlayerZoneTracker : MonoBehaviour
         {
             return;
         }
-
         if ( tZone == _currentZone )
         {
-            // Á¸À» ¹ş¾î³ª¸é Å¸ÀÌ¸Ó ÃÊ±âÈ­
+            // ì¡´ì„ ë²—ì–´ë‚˜ë©´ íƒ€ì´ë¨¸ ì´ˆê¸°í™”
             Debug.Log($"[PlayerZone] Exit zone: {_currentZone.ZoneId}");
             DevConsoleProvider.Log($"[PlayerZone] Exit zone: {_currentZone.ZoneId}");
             _currentZone = null;
             _stayTimer = 0f;
+
         }
     }
 }
