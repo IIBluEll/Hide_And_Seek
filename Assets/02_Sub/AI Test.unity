@@ -358,7 +358,7 @@ GameObject:
   - component: {fileID: 437369869}
   - component: {fileID: 437369868}
   - component: {fileID: 437369872}
-  - component: {fileID: 437369871}
+  - component: {fileID: 437369873}
   m_Layer: 0
   m_Name: Test Floor_4
   m_TagString: Untagged
@@ -460,20 +460,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 437369866}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &437369871
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 437369866}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526034a021944d948a95f0a62159fcfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
-  <ZoneId>k__BackingField: 3
-  _centerTrans: {fileID: 437369867}
 --- !u!65 &437369872
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -495,6 +481,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &437369873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437369866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5eacd84cb9c11046990eab36912a834, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 3
+  _reportInterval: 1
 --- !u!1 &478539243
 GameObject:
   m_ObjectHideFlags: 0
@@ -698,7 +698,7 @@ GameObject:
   - component: {fileID: 535113095}
   - component: {fileID: 535113094}
   - component: {fileID: 535113098}
-  - component: {fileID: 535113097}
+  - component: {fileID: 535113099}
   m_Layer: 0
   m_Name: Test Floor_2
   m_TagString: Untagged
@@ -800,20 +800,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 535113092}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &535113097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 535113092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526034a021944d948a95f0a62159fcfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
-  <ZoneId>k__BackingField: 1
-  _centerTrans: {fileID: 535113093}
 --- !u!65 &535113098
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -835,6 +821,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &535113099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 535113092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5eacd84cb9c11046990eab36912a834, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 1
+  _reportInterval: 1
 --- !u!1 &691070441
 GameObject:
   m_ObjectHideFlags: 0
@@ -1088,7 +1088,7 @@ GameObject:
   - component: {fileID: 874519823}
   - component: {fileID: 874519822}
   - component: {fileID: 874519826}
-  - component: {fileID: 874519825}
+  - component: {fileID: 874519827}
   m_Layer: 0
   m_Name: Test Floor_3
   m_TagString: Untagged
@@ -1190,20 +1190,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 874519820}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &874519825
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 874519820}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526034a021944d948a95f0a62159fcfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
-  <ZoneId>k__BackingField: 2
-  _centerTrans: {fileID: 874519821}
 --- !u!65 &874519826
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1225,6 +1211,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &874519827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 874519820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5eacd84cb9c11046990eab36912a834, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 2
+  _reportInterval: 1
 --- !u!1 &984056650
 GameObject:
   m_ObjectHideFlags: 0
@@ -1326,7 +1326,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1077606562}
-  - component: {fileID: 1077606563}
   m_Layer: 0
   m_Name: Provider
   m_TagString: Untagged
@@ -1349,20 +1348,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1077606563
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1077606560}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 060c94885dd25974881fb6009de8c272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MasterAIProvider
-  _playerTrans: {fileID: 1435732431}
-  _roughHintNoiseRadius: 10
 --- !u!1 &1156604439
 GameObject:
   m_ObjectHideFlags: 0
@@ -1376,7 +1361,7 @@ GameObject:
   - component: {fileID: 1156604441}
   - component: {fileID: 1156604440}
   - component: {fileID: 1156604445}
-  - component: {fileID: 1156604444}
+  - component: {fileID: 1156604446}
   m_Layer: 0
   m_Name: Test Floor_1
   m_TagString: Untagged
@@ -1478,20 +1463,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 478539245}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1156604444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1156604439}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526034a021944d948a95f0a62159fcfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
-  <ZoneId>k__BackingField: 0
-  _centerTrans: {fileID: 1156604443}
 --- !u!65 &1156604445
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1513,6 +1484,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1156604446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156604439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5eacd84cb9c11046990eab36912a834, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 0
+  _reportInterval: 1
 --- !u!1 &1336832997
 GameObject:
   m_ObjectHideFlags: 0
@@ -1639,8 +1624,6 @@ GameObject:
   - component: {fileID: 1421913484}
   - component: {fileID: 1421913483}
   - component: {fileID: 1421913482}
-  - component: {fileID: 1421913487}
-  - component: {fileID: 1421913488}
   m_Layer: 0
   m_Name: Agent
   m_TagString: Untagged
@@ -1765,50 +1748,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1421913487
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1421913481}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e5d218a2b9d4cd64d9cc9bcedf6f375e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyAIController
-  _playerTrans: {fileID: 1435732431}
-  _arr_patrolPoints:
-  - {fileID: 1156604443}
-  - {fileID: 535113093}
-  - {fileID: 874519821}
-  - {fileID: 437369867}
-  - {fileID: 1664806657}
-  - {fileID: 1823008965}
-  SearchDurationMin: 4
-  SearchDurationMax: 12
-  SearchRadiusMin: 2
-  SearchRadiusMax: 8
-  SuspicionIncreaseOnLoseSight: 0.3
-  SuspicionDecayPerSecond: 0.05
-  DrawLastKnownPositionGizmo: 1
---- !u!114 &1421913488
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1421913481}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a54f12d0b286b941ad0e859ace636cc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AIPerception_view
-  SightRange: 15
-  SightAngle: 60
-  SightMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!1 &1435732427
 GameObject:
   m_ObjectHideFlags: 0
@@ -1822,7 +1761,6 @@ GameObject:
   - component: {fileID: 1435732429}
   - component: {fileID: 1435732428}
   - component: {fileID: 1435732433}
-  - component: {fileID: 1435732432}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1925,20 +1863,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1435732432
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1435732427}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8eb28aff2e11cf4294774441330fe2b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerZoneTracker
-  LoiterThreshold: 5
-  ReportInterval: 10
 --- !u!54 &1435732433
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2092,7 +2016,7 @@ GameObject:
   - component: {fileID: 1664806659}
   - component: {fileID: 1664806658}
   - component: {fileID: 1664806662}
-  - component: {fileID: 1664806661}
+  - component: {fileID: 1664806663}
   m_Layer: 0
   m_Name: Test Floor_5
   m_TagString: Untagged
@@ -2194,20 +2118,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1664806656}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &1664806661
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1664806656}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526034a021944d948a95f0a62159fcfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
-  <ZoneId>k__BackingField: 4
-  _centerTrans: {fileID: 1664806657}
 --- !u!65 &1664806662
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2229,6 +2139,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1664806663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1664806656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5eacd84cb9c11046990eab36912a834, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 4
+  _reportInterval: 1
 --- !u!1 &1823008964
 GameObject:
   m_ObjectHideFlags: 0
@@ -2242,7 +2166,7 @@ GameObject:
   - component: {fileID: 1823008967}
   - component: {fileID: 1823008966}
   - component: {fileID: 1823008970}
-  - component: {fileID: 1823008969}
+  - component: {fileID: 1823008971}
   m_Layer: 0
   m_Name: Test Floor_6
   m_TagString: Untagged
@@ -2344,20 +2268,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1823008964}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &1823008969
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1823008964}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 526034a021944d948a95f0a62159fcfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
-  <ZoneId>k__BackingField: 5
-  _centerTrans: {fileID: 1823008965}
 --- !u!65 &1823008970
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2379,6 +2289,20 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 5, z: 10}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1823008971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823008964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5eacd84cb9c11046990eab36912a834, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 5
+  _reportInterval: 1
 --- !u!1 &2096575822
 GameObject:
   m_ObjectHideFlags: 0
