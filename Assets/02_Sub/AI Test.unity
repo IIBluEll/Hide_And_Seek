@@ -1326,6 +1326,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1077606562}
+  - component: {fileID: 1077606563}
   m_Layer: 0
   m_Name: Provider
   m_TagString: Untagged
@@ -1348,6 +1349,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1077606563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1077606560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54dc5867e09d6584fb75299bdd08df19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MasterAI_Provider
+  _globalTension: 0
+  _agent: {fileID: 1421913488}
 --- !u!1 &1156604439
 GameObject:
   m_ObjectHideFlags: 0
@@ -1624,6 +1639,8 @@ GameObject:
   - component: {fileID: 1421913484}
   - component: {fileID: 1421913483}
   - component: {fileID: 1421913482}
+  - component: {fileID: 1421913488}
+  - component: {fileID: 1421913487}
   m_Layer: 0
   m_Name: Agent
   m_TagString: Untagged
@@ -1748,6 +1765,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1421913487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421913481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5137126499a564992360546630d695, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChaseAI_Eye
+  SightRange: 15
+  SightAngle: 60
+  SightMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &1421913488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421913481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ccf501070dc5d743aa03419287929f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChaseAI_Controller
+  _playerTrans: {fileID: 1435732431}
+  _arr_patrolPoints:
+  - {fileID: 1156604443}
+  - {fileID: 535113093}
+  - {fileID: 874519821}
+  - {fileID: 437369867}
+  - {fileID: 1664806657}
+  - {fileID: 1823008965}
+  _arr_zoneAreas:
+  - {fileID: 1156604446}
+  - {fileID: 535113099}
+  - {fileID: 874519827}
+  - {fileID: 437369873}
+  - {fileID: 1664806663}
+  - {fileID: 1823008971}
+  SearchDurationMin: 4
+  SearchDurationMax: 12
+  SearchRadiusMin: 2
+  SearchRadiusMax: 8
+  SuspicionIncreaseOnLoseSight: 0.3
+  SuspicionDecayPerSecond: 0.05
+  DrawLastKnownPositionGizmo: 1
 --- !u!1 &1435732427
 GameObject:
   m_ObjectHideFlags: 0

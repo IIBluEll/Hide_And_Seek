@@ -46,6 +46,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // 힌트 제공 기준
     private float _suspicionThresholdSend = 50.0f;
 
+    [SerializeField]
+    private ChaseAI_Controller _agent;
+
     public override void Awake()
     {
         base.Awake();
@@ -122,6 +125,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     private void SetEnemyResetMode(bool isRest)
     {
         //TODO : 추격 AI 활성화 / 비활성화
+        _agent.SetRestMode(isRest);
     }
     #endregion
 
@@ -181,6 +185,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         }
 
         //TODO : 추격AI에게 힌트 전달
+        _agent.SetInvestigationTarget(tBestZoneId);
         Debug.Log($"힌트 전달 : {tBestZoneId}번 구역");
     }
 
