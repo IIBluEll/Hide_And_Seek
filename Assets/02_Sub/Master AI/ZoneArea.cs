@@ -27,9 +27,9 @@ public class ZoneArea : MonoBehaviour
         {
             _stayTimer = 0f;
 
-            if ( MasterAI_Provider.Instance != null )
+            if ( MasterAI_Test_Provider.Instance != null )
             {
-                MasterAI_Provider.Instance.ReportPlayerStay(_zoneId);
+                MasterAI_Test_Provider.Instance.ReportPlayerStay(_zoneId);
             }
         }
     }

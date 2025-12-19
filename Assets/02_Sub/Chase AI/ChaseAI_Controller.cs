@@ -151,9 +151,9 @@ public class ChaseAI_Controller : MonoBehaviour
         _state = nextState;
 
         // ★[추가] CHASE 진입/탈출 시 긴장도용 플래그 보고
-        if ( tWasChasing != tWillChasing && MasterAI_Provider.Instance != null )
+        if ( tWasChasing != tWillChasing && MasterAI_Test_Provider.Instance != null )
         {
-            MasterAI_Provider.Instance.ReportEnemyChaseStateChanged(tWillChasing);
+            MasterAI_Test_Provider.Instance.ReportEnemyChaseStateChanged(tWillChasing);
         }
 
         if ( nextState == AI_STATE.SEARCH )
@@ -354,7 +354,7 @@ public class ChaseAI_Controller : MonoBehaviour
     /// </summary>
     private void UpdateCloseToPlayerFlag()
     {
-        if ( _playerTrans == null || MasterAI_Provider.Instance == null )
+        if ( _playerTrans == null || MasterAI_Test_Provider.Instance == null )
         {
             return;
         }
@@ -369,7 +369,7 @@ public class ChaseAI_Controller : MonoBehaviour
         }
 
         _isCloseToPlayerFlag = tIsNowClose;
-        MasterAI_Provider.Instance.ReportEnemyCloseToPlayerChanged(_isCloseToPlayerFlag);
+        MasterAI_Test_Provider.Instance.ReportEnemyCloseToPlayerChanged(_isCloseToPlayerFlag);
     }
 
     /// <summary>
