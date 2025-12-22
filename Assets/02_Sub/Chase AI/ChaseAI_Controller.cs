@@ -18,7 +18,7 @@ public class ChaseAI_Controller : MonoBehaviour
 
     // ★[추가] 마스터 AI가 힌트 줄 Zone 정보
     [Header("Zone 정보 (Master AI 힌트용)")]
-    [SerializeField] private ZoneArea[] _arr_zoneAreas; // zoneId -> 위치 매핑
+    [SerializeField] private Debug_ZoneArea[] _arr_zoneAreas; // zoneId -> 위치 매핑
 
     [Header("수색 / 의심 관련")]
     public float SearchDurationMin = 4f;
@@ -386,7 +386,7 @@ public class ChaseAI_Controller : MonoBehaviour
 
         for ( int i = 0; i < _arr_zoneAreas.Length; i++ )
         {
-            ZoneArea tZone = _arr_zoneAreas[i];
+            Debug_ZoneArea tZone = _arr_zoneAreas[i];
             if ( tZone == null )
             {
                 continue;

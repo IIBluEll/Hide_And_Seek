@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ZoneArea : MonoBehaviour
+public class Debug_ZoneArea : MonoBehaviour
 {
     [SerializeField] private int _zoneId = 0;
     public int ZoneId => _zoneId;

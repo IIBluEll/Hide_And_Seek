@@ -2441,6 +2441,30 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 465699040}
   m_Mesh: {fileID: 4300000, guid: e4549bc8e1505ad4cb027f411215dc62, type: 3}
+--- !u!1 &493257627 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5674321955185200549, guid: 57d48d4bb40be4a42b69b2266ad2c9f9, type: 3}
+  m_PrefabInstance: {fileID: 549168180}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &493257628 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4975653612784856960, guid: 57d48d4bb40be4a42b69b2266ad2c9f9, type: 3}
+  m_PrefabInstance: {fileID: 549168180}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &493257633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493257627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01c78e10231a8ee4a832f11559627ac7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerZoneTracker
+  _playerRootTrans: {fileID: 493257628}
+  _currentZone: {fileID: 0}
 --- !u!1 &499162095
 GameObject:
   m_ObjectHideFlags: 0
@@ -3016,7 +3040,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5674321955185200549, guid: 57d48d4bb40be4a42b69b2266ad2c9f9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 493257633}
   m_SourcePrefab: {fileID: 100100000, guid: 57d48d4bb40be4a42b69b2266ad2c9f9, type: 3}
 --- !u!1 &557631102
 GameObject:
@@ -5214,6 +5241,7 @@ GameObject:
   m_Component:
   - component: {fileID: 896427223}
   - component: {fileID: 896427224}
+  - component: {fileID: 896427225}
   m_Layer: 0
   m_Name: Map
   m_TagString: Untagged
@@ -5273,6 +5301,18 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: 937054b77f75bd24b891adb30e40c6de, type: 2}
   m_BuildHeightMesh: 0
+--- !u!114 &896427225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 896427222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b60467f67fddc64a84e76667bef8321, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneRegistryProvider
 --- !u!1 &909748013
 GameObject:
   m_ObjectHideFlags: 0
@@ -5395,6 +5435,7 @@ GameObject:
   m_Component:
   - component: {fileID: 917464792}
   - component: {fileID: 917464793}
+  - component: {fileID: 917464794}
   m_Layer: 0
   m_Name: EngineRoom_Zone
   m_TagString: Untagged
@@ -5440,6 +5481,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 25, y: 2, z: 10}
   m_Center: {x: 12.5, y: 1, z: 0}
+--- !u!114 &917464794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 917464791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3b33bfa45f7e9146a6398aa64877bf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 1
+  _triggerCol: {fileID: 917464793}
+  _arr_neighbors:
+  - {fileID: 1561420224}
+  - {fileID: 1468845470}
+  _arr_patrolPoints: []
+  _arr_investigatePoints: []
+  _arr_ventSpots: []
+  _arr_cctvPoints: []
 --- !u!1 &923671167
 GameObject:
   m_ObjectHideFlags: 0
@@ -6789,6 +6851,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1384261920}
   - component: {fileID: 1384261921}
+  - component: {fileID: 1384261922}
   m_Layer: 0
   m_Name: Warehouse_Zone
   m_TagString: Untagged
@@ -6834,6 +6897,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 15, y: 2, z: 15}
   m_Center: {x: 7.5, y: 1, z: -7.5}
+--- !u!114 &1384261922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1384261919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3b33bfa45f7e9146a6398aa64877bf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 3
+  _triggerCol: {fileID: 1384261921}
+  _arr_neighbors:
+  - {fileID: 1468845470}
+  _arr_patrolPoints: []
+  _arr_investigatePoints: []
+  _arr_ventSpots: []
+  _arr_cctvPoints: []
 --- !u!1 &1384762310
 GameObject:
   m_ObjectHideFlags: 0
@@ -7292,6 +7375,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1468845468}
   - component: {fileID: 1468845469}
+  - component: {fileID: 1468845470}
   m_Layer: 0
   m_Name: Restaurant_Zone
   m_TagString: Untagged
@@ -7337,6 +7421,28 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 2, z: 15}
   m_Center: {x: 0, y: 1, z: -2.5}
+--- !u!114 &1468845470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468845467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3b33bfa45f7e9146a6398aa64877bf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 2
+  _triggerCol: {fileID: 1468845469}
+  _arr_neighbors:
+  - {fileID: 1561420224}
+  - {fileID: 917464794}
+  - {fileID: 1384261922}
+  _arr_patrolPoints: []
+  _arr_investigatePoints: []
+  _arr_ventSpots: []
+  _arr_cctvPoints: []
 --- !u!1 &1473314214
 GameObject:
   m_ObjectHideFlags: 0
@@ -7739,6 +7845,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1561420222}
   - component: {fileID: 1561420223}
+  - component: {fileID: 1561420224}
   m_Layer: 0
   m_Name: StartZone
   m_TagString: Untagged
@@ -7784,6 +7891,35 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 10, y: 2, z: 20}
   m_Center: {x: 0, y: 1, z: 5}
+--- !u!114 &1561420224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561420221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3b33bfa45f7e9146a6398aa64877bf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneArea
+  _zoneId: 0
+  _triggerCol: {fileID: 1561420223}
+  _arr_neighbors:
+  - {fileID: 917464794}
+  - {fileID: 1468845470}
+  _arr_patrolPoints:
+  - {fileID: 162093128}
+  - {fileID: 1598001874}
+  - {fileID: 1134730139}
+  - {fileID: 545886858}
+  _arr_investigatePoints:
+  - {fileID: 162093128}
+  - {fileID: 1598001874}
+  - {fileID: 1134730139}
+  - {fileID: 545886858}
+  _arr_ventSpots: []
+  _arr_cctvPoints: []
 --- !u!1 &1565298586
 GameObject:
   m_ObjectHideFlags: 0
