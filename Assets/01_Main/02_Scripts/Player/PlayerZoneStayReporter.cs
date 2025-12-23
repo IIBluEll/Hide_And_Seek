@@ -1,20 +1,19 @@
 using UnityEngine;
 public interface IPlayerStayConsumer
 {
-    void OnPlayerStayThresholdReached(ZoneArea zoneArea , float stayThresholdSec , int triggerCount);
+    void OnPlayerStayThresholdReached(ZoneArea zoneArea);
 }
 
 public class PlayerZoneStayReporter : MonoBehaviour
 {
-    [SerializeField] private float _stayThresholdSec = 3f;
+    [SerializeField] private float _stayThresholdSec = 10f;
 
     private IPlayerStayConsumer _stayConsumer;
 
     private ZoneArea _currentZone;
 
     private float _stayAccSec;
-    private int _triggerCount;
-    private bool _isReportingEnabled;
+    [SerializeField] private bool _isReportingEnabled;
 
     private void Update()
     {
@@ -30,10 +29,9 @@ public class PlayerZoneStayReporter : MonoBehaviour
             return;
         }
 
-        _stayAccSec -= _stayThresholdSec;
-        _triggerCount++;
+        _stayAccSec = 0;
 
-        _stayConsumer?.OnPlayerStayThresholdReached(_currentZone , _stayThresholdSec , _triggerCount);
+        _stayConsumer?.OnPlayerStayThresholdReached(_currentZone);
     }
 
     public void Initialize(IPlayerStayConsumer stayConsumer)
@@ -45,7 +43,6 @@ public class PlayerZoneStayReporter : MonoBehaviour
     {
         _isReportingEnabled = isEnabled;
         _stayAccSec = 0.0f;
-        _triggerCount = 0;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -58,6 +55,8 @@ public class PlayerZoneStayReporter : MonoBehaviour
         }
 
         SetCurrentZone(tZoneArea);
+
+        Debug.Log($"트리거 진입 : {tZoneArea.ZoneIds}");
     }
 
     private void OnTriggerExit(Collider other)
@@ -73,6 +72,8 @@ public class PlayerZoneStayReporter : MonoBehaviour
         {
             SetCurrentZone(null);
         }
+
+        Debug.Log($"트리거 퇴장 : {tZoneArea.ZoneIds}");
     }
 
     private void SetCurrentZone(ZoneArea nextZoneArea)
@@ -84,6 +85,5 @@ public class PlayerZoneStayReporter : MonoBehaviour
 
         _currentZone = nextZoneArea;
         _stayAccSec = 0f;
-        _triggerCount = 0;
     }
 }
