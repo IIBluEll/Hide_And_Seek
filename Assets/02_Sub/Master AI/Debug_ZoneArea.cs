@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ZoneArea : MonoBehaviour
+public class Debug_ZoneArea : MonoBehaviour
 {
     [SerializeField] private int _zoneId = 0;
     public int ZoneId => _zoneId;
@@ -27,9 +27,9 @@ public class ZoneArea : MonoBehaviour
         {
             _stayTimer = 0f;
 
-            if ( MasterAI_Provider.Instance != null )
+            if ( MasterAI_Test_Provider.Instance != null )
             {
-                MasterAI_Provider.Instance.ReportPlayerStay(_zoneId);
+                MasterAI_Test_Provider.Instance.ReportPlayerStay(_zoneId);
             }
         }
     }

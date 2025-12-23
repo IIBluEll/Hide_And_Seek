@@ -18,7 +18,7 @@ public class ChaseAI_Controller : MonoBehaviour
 
     // ★[추가] 마스터 AI가 힌트 줄 Zone 정보
     [Header("Zone 정보 (Master AI 힌트용)")]
-    [SerializeField] private ZoneArea[] _arr_zoneAreas; // zoneId -> 위치 매핑
+    [SerializeField] private Debug_ZoneArea[] _arr_zoneAreas; // zoneId -> 위치 매핑
 
     [Header("수색 / 의심 관련")]
     public float SearchDurationMin = 4f;
@@ -151,9 +151,9 @@ public class ChaseAI_Controller : MonoBehaviour
         _state = nextState;
 
         // ★[추가] CHASE 진입/탈출 시 긴장도용 플래그 보고
-        if ( tWasChasing != tWillChasing && MasterAI_Provider.Instance != null )
+        if ( tWasChasing != tWillChasing && MasterAI_Test_Provider.Instance != null )
         {
-            MasterAI_Provider.Instance.ReportEnemyChaseStateChanged(tWillChasing);
+            MasterAI_Test_Provider.Instance.ReportEnemyChaseStateChanged(tWillChasing);
         }
 
         if ( nextState == AI_STATE.SEARCH )
@@ -354,7 +354,7 @@ public class ChaseAI_Controller : MonoBehaviour
     /// </summary>
     private void UpdateCloseToPlayerFlag()
     {
-        if ( _playerTrans == null || MasterAI_Provider.Instance == null )
+        if ( _playerTrans == null || MasterAI_Test_Provider.Instance == null )
         {
             return;
         }
@@ -369,7 +369,7 @@ public class ChaseAI_Controller : MonoBehaviour
         }
 
         _isCloseToPlayerFlag = tIsNowClose;
-        MasterAI_Provider.Instance.ReportEnemyCloseToPlayerChanged(_isCloseToPlayerFlag);
+        MasterAI_Test_Provider.Instance.ReportEnemyCloseToPlayerChanged(_isCloseToPlayerFlag);
     }
 
     /// <summary>
@@ -386,7 +386,7 @@ public class ChaseAI_Controller : MonoBehaviour
 
         for ( int i = 0; i < _arr_zoneAreas.Length; i++ )
         {
-            ZoneArea tZone = _arr_zoneAreas[i];
+            Debug_ZoneArea tZone = _arr_zoneAreas[i];
             if ( tZone == null )
             {
                 continue;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using HM.CodeBase;
 using UnityEngine;
 
-public class MasterAI_Provider : ASingletone<MasterAI_Provider>
+public class MasterAI_Test_Provider : ASingletone<MasterAI_Test_Provider>
 {
     //Zone 설정
     private int _zoneCount = 6;
