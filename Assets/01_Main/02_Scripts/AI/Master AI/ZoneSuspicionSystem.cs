@@ -115,7 +115,7 @@ public class ZoneSuspicionSystem
 
         for ( int i = 0; i < _arr_ZoneSuspicion.Length; i++ )
         {
-            if ( _arr_ZoneSuspicion[ i ] <= tBestIndex )
+            if ( _arr_ZoneSuspicion[ i ] <= tBestValue )
             {
                 continue;
             }
