@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5bab735cccf9afa418e1783e5fed6109, type: 3}
-  m_Name: Easy
+  m_Name: DebugConfig
   m_EditorClassIdentifier: Assembly-CSharp::MasterAIConfig_SO
   SuspicionMax: 100
   DecreasePerSec: 2.5

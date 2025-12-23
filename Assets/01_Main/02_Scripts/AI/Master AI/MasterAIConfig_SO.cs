@@ -4,7 +4,7 @@ using UnityEngine;
 public class MasterAIConfig_SO : ScriptableObject
 {
     #region 의심도 시스템
-    [Header("Zone Suspicion System")]
+    [Header("의심도 시스템")]
     public float SuspicionMax = 100;
 
     [Tooltip("1초마다 모든 ZoneSuspicion에서 감소되는 값")]
@@ -16,5 +16,14 @@ public class MasterAIConfig_SO : ScriptableObject
 
     [Tooltip("플레이어가 한 Zone에 오래 있을때 증가하는 의심도 값")]
     public float StaySuspicionPerCamp = 10f;
+    #endregion
+
+    #region 힌트 보드 시스템
+
+    [Space(10f), Header("힌트 보드 시스템")]
+    public int HintTopK = 3;
+    public float HintTTLSec = 10f;
+    public float HintMinPriority = 10f;  // 최소 의심도... 아직 몰루?
+    public float HintRoulettePower = 1.0f;  // zone 선택 랜덤화
     #endregion
 }
