@@ -26,12 +26,14 @@ public class ZoneArea : MonoBehaviour
     [Header("Points")]
     [SerializeField] private Transform[] _arr_patrolPoints;
     [SerializeField] private Transform[] _arr_investigatePoints;
-    [SerializeField] private Transform[] _arr_ventSpots;
-    [SerializeField] private Transform[] _arr_cctvPoints;
+    [SerializeField] private Transform _ventSpot;
+    [SerializeField] private Transform _cctvPoint;
 
     public EZONE_ID ZoneIds => _zoneId;
 
     public ZoneArea[] Neighbors => _arr_neighbors;
+
+    public Transform VentSpot => _ventSpot;
 
     #region ¿ÜºÎ API
     public Vector3 GetCenterPos()

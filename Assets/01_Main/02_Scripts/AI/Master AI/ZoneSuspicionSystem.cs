@@ -43,7 +43,7 @@ public class ZoneSuspicionSystem
 
         var tIndex = (int)zoneArea.ZoneIds;
 
-        if ( tIndex < 0 || tIndex > _arr_ZoneSuspicion.Length)
+        if ( tIndex < 0 || tIndex >= _arr_ZoneSuspicion.Length)
         {
             return;
         }
@@ -140,6 +140,7 @@ public class ZoneSuspicionSystem
     }
     #endregion
 
+    
     public void ResetAllSuspicion()
     {
         for ( int i = 0; i < _arr_ZoneSuspicion.Length; i++ )
