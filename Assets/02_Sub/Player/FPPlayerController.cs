@@ -82,6 +82,14 @@ public class FPPlayerController : MonoBehaviour
         HandleLook();
         HandleMove();
         HandleCrouch();
+
+        //Debug
+        if(Input.GetKeyUp(KeyCode.F2))
+        {
+            float tLoud = 1f;
+
+            MasterAI_Provider.Instance.ReportNoise(transform.position , tLoud);
+        }
     }
 
     private void HandleLook()
@@ -191,7 +199,6 @@ public class FPPlayerController : MonoBehaviour
 
         _characterController.height = _crouchHeight;
 
-        // "발바닥 위치"를 유지하기 위한 center Y 재계산
         float tStandBottomY = _standCenter.y - (_standHeight * 0.5f);
         float tNewCenterY = tStandBottomY + (_crouchHeight * 0.5f);
         _characterController.center = new Vector3(_standCenter.x , tNewCenterY , _standCenter.z);
