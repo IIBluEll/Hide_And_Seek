@@ -30,11 +30,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     private Vector3 _debugLastTargetPos = Vector3.zero;
 
-    public override void Awake()
+    private void Start()
     {
-        base.Awake();
-
-        if(_aiController != null && _playerTransform != null)
+        if ( _aiController != null && _playerTransform != null )
         {
             _aiController.Initalize(_playerTransform);
             _aiController.Vanish();
