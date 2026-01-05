@@ -89,6 +89,7 @@ public class ChaseAi_Controller : MonoBehaviour
     {
         return _currentState == CHASEAI_STATE.IDLE && !_isWaiting;
     }
+    
     public bool IsChasing()
     {
         return _currentState == CHASEAI_STATE.CHASE;
