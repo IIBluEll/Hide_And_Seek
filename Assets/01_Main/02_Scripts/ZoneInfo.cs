@@ -1,18 +1,18 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
 public class ZoneInfo : MonoBehaviour
 {
-    [Header("±¸¿ª")]
+    [Header("êµ¬ì—­")]
     public string ZoneID;
     public Collider ZoneBounds;
 
-    [Space(10f),Header("¼ö»ö Æ÷ÀÎÆ®")]
+    [Space(10f),Header("ìˆ˜ìƒ‰ í¬ì¸íŠ¸")]
     [SerializeField] private List<Transform> _searchPoints = new();
     [SerializeField] private List<Transform> _hidingSpots = new();
 
-    [Space(10f), Header("AI ½ºÆù ÁöÁ¡")]
+    [Space(10f), Header("AI ìŠ¤í° ì§€ì ")]
     [SerializeField] private List<Transform> _spawnPoints = new();
 
     public bool IsPlayerInZone(Vector3 playerPos)
@@ -25,7 +25,7 @@ public class ZoneInfo : MonoBehaviour
         return ZoneBounds.bounds.Contains(playerPos);
     }
 
-    // ·£´ı ¼ö»ö ÁöÁ¡ ¹İÈ¯
+    // ëœë¤ ìˆ˜ìƒ‰ ì§€ì  ë°˜í™˜
     public Vector3 GetRandomSearchPoint()
     {
         if(_searchPoints.Count == 0)
@@ -36,7 +36,7 @@ public class ZoneInfo : MonoBehaviour
         return _searchPoints[ Random.Range(0 , _searchPoints.Count) ].position;
     }
 
-    // ÇÃ·¹ÀÌ¾î¿Í °¡Àå °¡±î¿î Àº½ÅÃ³ ¹İÈ¯
+    // í”Œë ˆì´ì–´ì™€ ê°€ì¥ ê°€ê¹Œìš´ ì€ì‹ ì²˜ ë°˜í™˜
     public Vector3 GetNearHidingSpot(Vector3 playerPos)
     {
         if ( _hidingSpots.Count == 0 )
@@ -47,7 +47,7 @@ public class ZoneInfo : MonoBehaviour
         return _hidingSpots.OrderBy(t => Vector3.SqrMagnitude(t.position - playerPos)).FirstOrDefault().position;
     }
 
-    // ·£´ı ½ºÆù À§Ä¡ ¹İÈ¯
+    // ëœë¤ ìŠ¤í° ìœ„ì¹˜ ë°˜í™˜
     public Vector3 GetRandomSpawnPoint()
     {
         if(_spawnPoints.Count == 0)
@@ -56,5 +56,21 @@ public class ZoneInfo : MonoBehaviour
         }
 
         return _spawnPoints[Random.Range(0, _spawnPoints.Count) ].position;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.CompareTag("Player"))
+        {
+            MasterAI_Provider.Instance.SetCurrentZone(this);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            MasterAI_Provider.Instance.ClearCurrentZone(this);
+        }
     }
 }

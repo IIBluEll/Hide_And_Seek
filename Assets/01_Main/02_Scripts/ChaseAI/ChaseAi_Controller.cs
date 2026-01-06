@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+ï»¿using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
 using System;
@@ -10,49 +10,49 @@ public enum CHASEAI_STATE
     PATROL,
     CHASE,
     INVESTIGATE,
+    RETREAT,
 }
 
 [RequireComponent(typeof(NavMeshAgent))]
-public class ChaseAi_Controller : MonoBehaviour
+public class ChaseAI_Controller : MonoBehaviour
 {
-    [Header("ÇöÀç »óÅÂ")]
+    [Header("ì°¸ì¡°")]
     [SerializeField] private CHASEAI_STATE _currentState = CHASEAI_STATE.IDLE;
 
-    [Header("¼¼ÆÃ")]
+    [Space(10f), Header("ì´ë™")]
+    [SerializeField] private float _walkSpeed = 4f;
+    [SerializeField] private float _runSpeed = 7f;
     [SerializeField] private float _idleWaitTime = 3f;
 
-    [Space(10f),Header("½Ã¾ß ¼³Á¤")]
-    [SerializeField] private float _sightRange = 15.0f;
-    [SerializeField] private float _horizontalSightAngle = 120.0f; // ÁÂ¿ì ½Ã¾ß°¢ 
-    [SerializeField] private float _verticalSightAngle = 60.0f;    // À§¾Æ·¡ ½Ã¾ß°¢ 
-    [SerializeField] private LayerMask _obstacleMask;   
-    [SerializeField] private Transform _eyeTransform;   
+    [Space(10f), Header("ì‹œì•¼")]
+    [SerializeField] private float _sightRange = 15f;
+    [SerializeField] private float _horizontalSightAngle = 120f;
+    [SerializeField] private float _verticalSightAngle = 60f;
+    [SerializeField] private LayerMask _obstacleMask;
+    [SerializeField] private Transform _eyeTransform;
 
     private NavMeshAgent _agent;
     private Transform _targetPlayer;
 
+    private CancellationTokenSource _waitCts;
     private bool _isWaiting = false;
 
-    private CancellationTokenSource _waitCts;
+    // Debugìš© í˜„ì¬ ìƒíƒœ í™•ì¸ í”„ë¡œí¼í‹°
+    public CHASEAI_STATE CurrentState => _currentState;
+
+    #region Unity LifeCycle
 
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
-        _agent.speed = 3.5f;
-        _agent.angularSpeed = 120f;
+        _agent.speed = _walkSpeed;
 
-        if ( _eyeTransform == null )
+        if (_eyeTransform == null)
         {
             _eyeTransform = transform;
         }
     }
-
-    private void OnDestroy()
-    {
-        _waitCts?.Cancel();
-        _waitCts?.Dispose();
-    }
-
+    
     public void Initalize(Transform player)
     {
         _targetPlayer = player;
@@ -60,132 +60,190 @@ public class ChaseAi_Controller : MonoBehaviour
 
     private void Update()
     {
+        // í‡´ê·¼ ì¤‘ì´ê±°ë‚˜ ë§µì— ì—†ìœ¼ë©´ ê°ê° ì²˜ë¦¬ ì•ˆ í•¨
+        if ( !gameObject.activeSelf) return;
+
+        // 1. ì‹œì•¼ ê°ì§€ (í”Œë ˆì´ì–´ ë°œê²¬ ì‹œ ì¦‰ì‹œ Chase ì „í™˜)
         if ( _targetPlayer != null )
         {
             DetectPlayer();
         }
 
-        switch (_currentState)
+        // 2. ìƒíƒœë³„ í–‰ë™
+        switch ( _currentState )
         {
             case CHASEAI_STATE.PATROL:
             case CHASEAI_STATE.INVESTIGATE:
-
-                CheckArrival();
+                CheckArrival(); // ëª©ì ì§€ ë„ì°© ì²´í¬
                 break;
 
             case CHASEAI_STATE.CHASE:
+                ChaseUpdate(); // ì¶”ê²© ë¡œì§
+                break;
 
-                ChaseUpdate();
+            case CHASEAI_STATE.RETREAT:
+                CheckRetreatArrival(); // í™˜ê¸°êµ¬ ë„ì°© ì²´í¬
                 break;
         }
     }
 
-    private void ChangeState(CHASEAI_STATE state)
+    private void OnDestroy()
     {
-        _currentState = state;
+        CancelWait();
     }
+    #endregion
 
+    #region MasterAIì—ê²Œ ëª…ë ¹ ìˆ˜ì‹  ë¡œì§
+
+    // ëª…ë ¹ ë°›ì„ ìˆ˜ ìˆëŠ” ìƒíƒœ ì²´í¬
     public bool IsAvailableForCommand()
     {
-        return _currentState == CHASEAI_STATE.IDLE && !_isWaiting;
+        
+
+        return gameObject.activeSelf && _currentState == CHASEAI_STATE.IDLE && !_isWaiting;
     }
-    
+
+    // ì¶”ê²© ìƒíƒœì¸ì§€ ì²´í¬
     public bool IsChasing()
     {
         return _currentState == CHASEAI_STATE.CHASE;
     }
 
-    // ¼Ò¸® µè°í Á¶»ç
-    public void InVestigateNoise(Vector3 targetPos)
+    // ëª…ë ¹ ë°›ì€ ìœ„ì¹˜ë¡œ ì´ë™
+    public void MoveToTarget(Vector3 targetPos)
     {
-        if ( _currentState == CHASEAI_STATE.CHASE )
+        if (!IsAvailableForCommand())
         {
             return;
         }
 
-        Debug.Log($"[Alien] ¼Ò¸®°¡ µé·È´Ù! {targetPos} È®ÀÎÇÏ·¯ °£´Ù.");
+        MoveAgent(targetPos, _walkSpeed);
+        ChangeState(CHASEAI_STATE.PATROL);
+    }
 
-        if ( _isWaiting && _waitCts != null )
+    // ì†ŒìŒì´ ë“¤ë ¸ì„ ë•Œ
+    public void InvestgateNoise(Vector3 targetPos)
+    {
+        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT)
         {
-            _waitCts.Cancel();
-            _isWaiting = false;
+            return;
         }
 
-        _agent.SetDestination(targetPos);
-        _agent.isStopped = false;
-        _agent.speed = 4f;
+        Debug.Log("[Chase AI] ì†ŒìŒ ê°ì§€!");
+        CancelWait();
 
+        MoveAgent(targetPos, _walkSpeed);
         ChangeState(CHASEAI_STATE.INVESTIGATE);
     }
 
-    public void MoveToTarget(Vector3 targetPos)
+    // í‡´ê·¼ ëª…ë ¹ -> ë²¤íŠ¸ë¡œ ì´ë™
+    public void OrderRetreat(Vector3 ventPos)
     {
-        if ( _currentState == CHASEAI_STATE.CHASE )
+        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT )
         {
             return;
         }
 
-        _agent.SetDestination(targetPos);
-        _agent.isStopped = false;
-        _agent.speed = 3.5f;
+        Debug.Log("[Chase AI] ì¶”ê²© AI í‡´ê·¼í•˜ëŸ¬ê°");
+        CancelWait();
 
-        ChangeState(CHASEAI_STATE.PATROL);
-        Debug.Log($"[Alien] ÀÌµ¿ ½ÃÀÛ: {targetPos}");
+        MoveAgent(ventPos, _walkSpeed);
+        ChangeState(CHASEAI_STATE.RETREAT);
     }
 
-    private void StartChase()
+    // ìŠ¤í°
+    public void Spawn(Vector3 position)
     {
-        Debug.Log("!!! ¹ß°ß !!! Ãß°İ ½ÃÀÛ !!!");
+        gameObject.SetActive(true);
+        _agent.Warp(position);
 
-        if ( _isWaiting && _waitCts != null )
-        {
-            _waitCts.Cancel();
-            _isWaiting = false;
-        }
+        ChangeState(CHASEAI_STATE.IDLE);
 
-        ChangeState(CHASEAI_STATE.CHASE);
-        _agent.speed = 5.0f;
+        Debug.Log("[Chase AI] ìŠ¤í°í•¨");
+    }
+
+    // í‡´ê·¼
+    public void Vanish()
+    {
+        MasterAI_Provider.Instance.OnChaseAIVanish();
+        CancelWait();
+        _agent.ResetPath();
+
+        gameObject.SetActive(false);
+        ChangeState(CHASEAI_STATE.IDLE);
+
+        Debug.Log("[Chase AI] ì¶”ê²© AI í‡´ê·¼ ì™„ë£Œ");
+    }
+    #endregion
+
+    #region ë‚´ë¶€ ë¡œì§
+
+    private void MoveAgent(Vector3 pos, float speed)
+    {
+        _agent.isStopped = false;
+        _agent.speed = speed;
+        _agent.SetDestination(pos);
+    }
+
+    private void ChangeState(CHASEAI_STATE newState)
+    {
+        _currentState = newState;
     }
 
     private void CheckArrival()
     {
-        if(_agent.pathPending)
+        if (_agent.pathPending )
         {
             return;
         }
 
-        if(_agent.remainingDistance <= _agent.stoppingDistance)
+        if (_agent.remainingDistance <= _agent.stoppingDistance)
         {
-            if(_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
+            if (!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
             {
+                // ë„ì°© í›„ ì ì‹œ ëŒ€ê¸°
                 WaitAndSwitchToIdle_async().Forget();
             }
         }
     }
 
+    // í‡´ê·¼ì‹œ ë²¤íŠ¸ ë„ì°© ì²´í¬
+    private void CheckRetreatArrival()
+    {
+        if (_agent.pathPending)
+        {
+            return;
+        }
+
+        //TODO : ì¶”ê²©AIê°€ ë²¤íŠ¸ì— ë“¤ì–´ê°€ëŠ” ì• ë‹ˆë©”ì´ì…˜ ë˜ëŠ” ì‚¬ìš´ë“œ ì¬ìƒ
+        if (_agent.remainingDistance <= _agent.stoppingDistance)
+        {
+            Vanish();
+        }
+    }
+
     private async UniTaskVoid WaitAndSwitchToIdle_async()
     {
-        if ( _isWaiting )
+        if (_isWaiting)
         {
             return;
         }
 
         _isWaiting = true;
-        Debug.Log("[Alien] ¸ñÀûÁö µµÂø. ÁÖÀ§¸¦ »ìÇÇ´Â Áß...");
+
+        //TODO : ì¶”ê²©AIê°€ ë‘ë¦¬ë²ˆ ë˜ëŠ” ë¬´ì–¸ê°€ ë’¤ì§€ëŠ” ì• ë‹ˆë©”ì´ì…˜
+        Debug.Log("[Alien] ë„ì°©. ì£¼ìœ„ë¥¼ ì‚´í”¼ëŠ” ì¤‘...");
 
         _waitCts = new CancellationTokenSource();
         var linkCts = CancellationTokenSource.CreateLinkedTokenSource(_waitCts.Token, this.GetCancellationTokenOnDestroy());
 
         try
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(_idleWaitTime) , cancellationToken : linkCts.Token);
-
-            Debug.Log("[Alien] ´ë±â ¿Ï·á. ´ÙÀ½ ¸í·É ´ë±â.");
+            await UniTask.Delay(TimeSpan.FromSeconds(_idleWaitTime), cancellationToken: linkCts.Token);
             ChangeState(CHASEAI_STATE.IDLE);
         }
-        catch ( OperationCanceledException )
+        catch (OperationCanceledException)
         {
-            Debug.Log("[Alien] ´ë±â Áß´ÜµÊ! (¼Ò¸®/Ãß°İ)");
         }
         finally
         {
@@ -195,133 +253,115 @@ public class ChaseAi_Controller : MonoBehaviour
         }
     }
 
-    #region AI ½Ã¾ß ·ÎÁ÷
+    private void CancelWait()
+    {
+        if (_isWaiting && _waitCts != null)
+        {
+            _waitCts.Cancel();
+            _isWaiting = false;
+        }
+    }
+
+    #endregion
+
+    #region  ì¶”ê²© ì‹œìŠ¤í…œ ë¡œì§
 
     private void DetectPlayer()
     {
-        float distanceToTarget = Vector3.Distance(transform.position, _targetPlayer.position);
-        if ( distanceToTarget > _sightRange ) return;
+        // ê±°ë¦¬ ì²´í¬
+        float dist = Vector3.Distance(transform.position, _targetPlayer.position);
+        if ( dist > _sightRange ) return;
 
-        // [ÇÙ½É º¯°æ] ÇÃ·¹ÀÌ¾î À§Ä¡¸¦ '³»(Alien) ±âÁØÀÇ ·ÎÄÃ ÁÂÇ¥'·Î º¯È¯
+        // ì‹œì•¼ê° ì²´í¬ (ì•ì„  ì½”ë“œì™€ ë™ì¼í•œ ë¡œì§)
         Vector3 targetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
+        if ( targetLocal.z < 0 ) return;
 
-        // 2. ¹æÇâ Ã¼Å© (µÚ¿¡ ÀÖÀ¸¸é ¹«½Ã)
-        if ( targetLocal.z < 0 ) return; // z°¡ À½¼ö¸é ³» µî µÚ¿¡ ÀÖ´Ù´Â ¶æ
-
-        // 3. ¼öÆò(ÁÂ¿ì) °¢µµ °è»ê ¹× Ã¼Å©
-        // Atan2(x, z)´Â Æò¸é»óÀÇ °¢µµ¸¦ ¶óµğ¾ÈÀ¸·Î ¹İÈ¯ÇÔ ->µµ·Î º¯È¯
         float angleH = Mathf.Atan2(targetLocal.x, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleH) > _horizontalSightAngle * 0.5f ) return; // ÁÂ¿ì ¹üÀ§¸¦ ¹ş¾î³²
+        if ( Mathf.Abs(angleH) > _horizontalSightAngle * 0.5f ) return;
 
-        // 4. ¼öÁ÷(À§¾Æ·¡) °¢µµ °è»ê ¹× Ã¼Å©
-        // Atan2(y, z)´Â ³ôÀÌ °¢µµ¸¦ ¹İÈ¯ÇÔ
         float angleV = Mathf.Atan2(targetLocal.y, targetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(angleV) > _verticalSightAngle * 0.5f ) return;
 
-        if ( Mathf.Abs(angleV) > _verticalSightAngle * 0.5f ) return; // À§¾Æ·¡ ¹üÀ§¸¦ ¹ş¾î³²
-
-        // 5. Àå¾Ö¹°(Raycast) Ã¼Å© (±âÁ¸°ú µ¿ÀÏ)
-        Vector3 dirToTarget = (_targetPlayer.position - _eyeTransform.position).normalized;
-
-        if ( !Physics.Raycast(_eyeTransform.position , dirToTarget , distanceToTarget , _obstacleMask) )
+        // ì¥ì• ë¬¼ ì²´í¬
+        Vector3 dir = (_targetPlayer.position - _eyeTransform.position).normalized;
+        if ( !Physics.Raycast(_eyeTransform.position , dir , dist , _obstacleMask) )
         {
-            if ( _currentState != CHASEAI_STATE.CHASE)
+            // [ë°œê²¬!]
+            if ( _currentState != CHASEAI_STATE.CHASE )
             {
                 StartChase();
             }
+
+            // [ë³´ê³ ] ë§ˆìŠ¤í„° AIì—ê²Œ "ë‚˜ ìŸ¤ ë³´ê³  ìˆìŒ" ë³´ê³  -> ê²½ê³„ë„ Max, ìŠ¤íŠ¸ë ˆìŠ¤ ìƒìŠ¹
+            MasterAI_Provider.Instance.ReportPlayerContact();
         }
+    }
+
+    private void StartChase()
+    {
+        Debug.Log("!!! í”Œë ˆì´ì–´ ë°œê²¬ !!! ì¶”ê²© ê°œì‹œ !!!");
+        CancelWait();
+        ChangeState(CHASEAI_STATE.CHASE);
+        MoveAgent(_targetPlayer.position , _runSpeed);
     }
 
     private void ChaseUpdate()
     {
-        if ( _targetPlayer == null )
-        {
-            return;
-        }
+        if ( _targetPlayer == null ) return;
 
+        // ì¶”ê²© ì¤‘ì—” ê³„ì† í”Œë ˆì´ì–´ ìœ„ì¹˜ë¡œ ê°±ì‹ 
         _agent.SetDestination(_targetPlayer.position);
 
-        // TODO : Ãß°İ Æ÷±â ·ÎÁ÷
+        // TODO: ê±°ë¦¬ê°€ ë„ˆë¬´ ë©€ì–´ì§€ë©´ ì¶”ê²© í¬ê¸°í•˜ê³  IDLE/SEARCHë¡œ ëŒì•„ê°€ëŠ” ë¡œì§ í•„ìš”
     }
 
-    // [New] Åğ±Ù (ºñÈ°¼ºÈ­)
-    public void Vanish()
-    {
-        // µ¿ÀÛ ¸ØÃã
-        _agent.isStopped = true;
-        _agent.ResetPath();
-
-        // ´ë±â ÁßÀÎ UniTask Ãë¼Ò
-        if ( _waitCts != null ) _waitCts.Cancel();
-        _isWaiting = false;
-
-        // »óÅÂ ÃÊ±âÈ­
-        _currentState = CHASEAI_STATE.IDLE;
-
-        // °ÔÀÓ ¿ÀºêÁ§Æ® ²ô±â (¾È º¸ÀÓ)
-        gameObject.SetActive(false);
-    }
-
-    // [New] Ãâ±Ù (½ºÆù)
-    public void Spawn(Vector3 position)
-    {
-        // À§Ä¡ ÀÌµ¿ (NavMeshAgent´Â transform.position ¸»°í Warp¸¦ ½á¾ß ÇÔ)
-        _agent.Warp(position);
-
-        // ÄÑ±â
-        gameObject.SetActive(true);
-
-        Debug.Log($"[Alien] ½ºÆù ¿Ï·á: {position}");
-
-        // ¹Ù·Î Idle »óÅÂ·Î ½ÃÀÛÇÏ¸é MasterAI°¡ ´ÙÀ½ ÇÁ·¹ÀÓ¿¡ ¸í·ÉÀ» ÁÜ
-        _currentState = CHASEAI_STATE.IDLE;
-    }
-
-    private void OnDrawGizmos()
-    {
-        // ´« À§Ä¡°¡ ¾øÀ¸¸é ¾ÆÁ÷ ½ÇÇà ÀüÀÌ¹Ç·Î transform »ç¿ë, ÀÖÀ¸¸é _eyeTransform »ç¿ë
-        Transform eye = (_eyeTransform == null) ? transform : _eyeTransform;
-        Vector3 origin = eye.position;
-
-        // 1. ±âº» °Å¸® ¹üÀ§ ±×¸®±â (¿¬ÇÑ ³ë¶õ»ö ±¸Ã¼)
-        Gizmos.color = new Color(1f , 1f , 0f , 0.2f); // ¹İÅõ¸í ³ë¶û
-        Gizmos.DrawWireSphere(origin , _sightRange);
-
-        // 2. ½Ã¾ß°¢ °è»êÀ» À§ÇÑ ÁØºñ
-        Gizmos.color = Color.cyan; // ½Ã¾ß°¢Àº ÇÏ´Ã»öÀ¸·Î Ç¥½Ã
-        float halfH = _horizontalSightAngle * 0.5f;
-        float halfV = _verticalSightAngle * 0.5f;
-        Quaternion eyeRotation = eye.rotation;
-
-        // 3. ³× ±ÍÅüÀÌÀÇ ¹æÇâ º¤ÅÍ °è»ê (ÄõÅÍ´Ï¾ğ È¸Àü Á¶ÇÕ)
-        // eyeRotation: ÇöÀç ´«ÀÇ ¹æÇâ
-        // Quaternion.Euler(-halfV, -halfH, 0): ·ÎÄÃ ±âÁØ À§·Î Vµµ, ¿ŞÂÊÀ¸·Î Hµµ È¸Àü
-        Vector3 dirTL = eyeRotation * Quaternion.Euler(-halfV, -halfH, 0) * Vector3.forward; // Top-Left
-        Vector3 dirTR = eyeRotation * Quaternion.Euler(-halfV,  halfH, 0) * Vector3.forward; // Top-Right
-        Vector3 dirBL = eyeRotation * Quaternion.Euler( halfV, -halfH, 0) * Vector3.forward; // Bottom-Left
-        Vector3 dirBR = eyeRotation * Quaternion.Euler( halfV,  halfH, 0) * Vector3.forward; // Bottom-Right
-
-        // 4. ÃÖ´ë °Å¸® ÁöÁ¡ ÁÂÇ¥ °è»ê
-        Vector3 farTL = origin + dirTL * _sightRange;
-        Vector3 farTR = origin + dirTR * _sightRange;
-        Vector3 farBL = origin + dirBL * _sightRange;
-        Vector3 farBR = origin + dirBR * _sightRange;
-
-        // 5. ¼± ±×¸®±â
-        // 5-1. ´«¿¡¼­ ³× ±ÍÅüÀÌ·Î »¸¾î³ª°¡´Â ·¹ÀÌ(Ray)
-        Gizmos.DrawLine(origin , farTL);
-        Gizmos.DrawLine(origin , farTR);
-        Gizmos.DrawLine(origin , farBL);
-        Gizmos.DrawLine(origin , farBR);
-
-        // 5-2. ³¡ºÎºĞÀ» ¿¬°áÇÏ¿© »ç°¢Çü ÇÁ·¹ÀÓ ¸¸µé±â
-        Gizmos.DrawLine(farTL , farTR); // »ó´Ü °¡·Î¼±
-        Gizmos.DrawLine(farTR , farBR); // ¿ìÃø ¼¼·Î¼±
-        Gizmos.DrawLine(farBR , farBL); // ÇÏ´Ü °¡·Î¼±
-        Gizmos.DrawLine(farBL , farTL); // ÁÂÃø ¼¼·Î¼±
-
-        // 6. (¼±ÅÃ»çÇ×) Áß¾Ó Á¤¸é ¹æÇâ Ç¥½Ã (»¡°£»ö)
-        Gizmos.color = Color.red;
-        Gizmos.DrawRay(origin , eye.forward * _sightRange);
-    }
     #endregion
+
+    // private void OnDrawGizmos()
+    // {
+    //     // ëˆˆ ìœ„ì¹˜ê°€ ì—†ìœ¼ë©´ ì•„ì§ ì‹¤í–‰ ì „ì´ë¯€ë¡œ transform ì‚¬ìš©, ìˆìœ¼ë©´ _eyeTransform ì‚¬ìš©
+    //     Transform eye = (_eyeTransform == null) ? transform : _eyeTransform;
+    //     Vector3 origin = eye.position;
+
+    //     // 1. ê¸°ë³¸ ê±°ë¦¬ ë²”ìœ„ ê·¸ë¦¬ê¸° (ì—°í•œ ë…¸ë€ìƒ‰ êµ¬ì²´)
+    //     Gizmos.color = new Color(1f, 1f, 0f, 0.2f); // ë°˜íˆ¬ëª… ë…¸ë‘
+    //     Gizmos.DrawWireSphere(origin, _sightRange);
+
+    //     // 2. ì‹œì•¼ê° ê³„ì‚°ì„ ìœ„í•œ ì¤€ë¹„
+    //     Gizmos.color = Color.cyan; // ì‹œì•¼ê°ì€ í•˜ëŠ˜ìƒ‰ìœ¼ë¡œ í‘œì‹œ
+    //     float halfH = _horizontalSightAngle * 0.5f;
+    //     float halfV = _verticalSightAngle * 0.5f;
+    //     Quaternion eyeRotation = eye.rotation;
+
+    //     // 3. ë„¤ ê·€í‰ì´ì˜ ë°©í–¥ ë²¡í„° ê³„ì‚° (ì¿¼í„°ë‹ˆì–¸ íšŒì „ ì¡°í•©)
+    //     // eyeRotation: í˜„ì¬ ëˆˆì˜ ë°©í–¥
+    //     // Quaternion.Euler(-halfV, -halfH, 0): ë¡œì»¬ ê¸°ì¤€ ìœ„ë¡œ Vë„, ì™¼ìª½ìœ¼ë¡œ Hë„ íšŒì „
+    //     Vector3 dirTL = eyeRotation * Quaternion.Euler(-halfV, -halfH, 0) * Vector3.forward; // Top-Left
+    //     Vector3 dirTR = eyeRotation * Quaternion.Euler(-halfV, halfH, 0) * Vector3.forward; // Top-Right
+    //     Vector3 dirBL = eyeRotation * Quaternion.Euler(halfV, -halfH, 0) * Vector3.forward; // Bottom-Left
+    //     Vector3 dirBR = eyeRotation * Quaternion.Euler(halfV, halfH, 0) * Vector3.forward; // Bottom-Right
+
+    //     // 4. ìµœëŒ€ ê±°ë¦¬ ì§€ì  ì¢Œí‘œ ê³„ì‚°
+    //     Vector3 farTL = origin + dirTL * _sightRange;
+    //     Vector3 farTR = origin + dirTR * _sightRange;
+    //     Vector3 farBL = origin + dirBL * _sightRange;
+    //     Vector3 farBR = origin + dirBR * _sightRange;
+
+    //     // 5. ì„  ê·¸ë¦¬ê¸°
+    //     // 5-1. ëˆˆì—ì„œ ë„¤ ê·€í‰ì´ë¡œ ë»—ì–´ë‚˜ê°€ëŠ” ë ˆì´(Ray)
+    //     Gizmos.DrawLine(origin, farTL);
+    //     Gizmos.DrawLine(origin, farTR);
+    //     Gizmos.DrawLine(origin, farBL);
+    //     Gizmos.DrawLine(origin, farBR);
+
+    //     // 5-2. ëë¶€ë¶„ì„ ì—°ê²°í•˜ì—¬ ì‚¬ê°í˜• í”„ë ˆì„ ë§Œë“¤ê¸°
+    //     Gizmos.DrawLine(farTL, farTR); // ìƒë‹¨ ê°€ë¡œì„ 
+    //     Gizmos.DrawLine(farTR, farBR); // ìš°ì¸¡ ì„¸ë¡œì„ 
+    //     Gizmos.DrawLine(farBR, farBL); // í•˜ë‹¨ ê°€ë¡œì„ 
+    //     Gizmos.DrawLine(farBL, farTL); // ì¢Œì¸¡ ì„¸ë¡œì„ 
+
+    //     // 6. (ì„ íƒì‚¬í•­) ì¤‘ì•™ ì •ë©´ ë°©í–¥ í‘œì‹œ (ë¹¨ê°„ìƒ‰)
+    //     Gizmos.color = Color.red;
+    //     Gizmos.DrawRay(origin, eye.forward * _sightRange);
+    // }
 }

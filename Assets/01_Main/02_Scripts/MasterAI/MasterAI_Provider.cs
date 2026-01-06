@@ -1,6 +1,7 @@
-using HM.CodeBase;
+ï»¿using HM.CodeBase;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.AppUI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -12,21 +13,21 @@ public enum MASTERAI_PHASE
 
 public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 {
-    [Header("ÂüÁ¶")]
-    [SerializeField] private ChaseAi_Controller _chaseAI;
+    [Header("ì°¸ì¡°")]
+    [SerializeField] private ChaseAI_Controller _chaseAI;
     [SerializeField] private Transform _playerTransform;
     [SerializeField] private LayerMask _zoneLayerMask;
 
-    [Space(10f), Header("¼ö»ö ¹İ°æ")]
+    [Space(10f), Header("ìˆ˜ìƒ‰ ë°˜ê²½")]
     [SerializeField] private float _maxSearch = 25f;
     [SerializeField] private float _minSearch = 5f;
 
-    [Header("ÁöÇ¥ ¼öÄ¡ º¯¼ö")]
-    private float _stressDecreaseRate = 2f;     // ÇÇ·Îµµ °¨¼Ò
-    private float _alertDecreaseRate = 5f;      // °æ°èµµ °¨¼Ò
-    private float _maxStressThreshold = 100f;   // Åğ±Ù ±âÁØ ÇÇ·Îµµ
-    private float _commandInterval = 5f;        // Ãß°İAI¿¡°Ô ¸í·É ³»¸®´Â ¼Óµµ
-    [SerializeField] private float _respawnCooldown = 15f; // ÀçµîÀå ÄğÅ¸ÀÓ
+    [Header("ì§€í‘œ ìˆ˜ì¹˜ ë³€ìˆ˜")]
+    private float _stressDecreaseRate = 2f;     // í”¼ë¡œë„ ê°ì†Œ
+    private float _alertDecreaseRate = 5f;      // ê²½ê³„ë„ ê°ì†Œ
+    private float _maxStressThreshold = 100f;   // í‡´ê·¼ ê¸°ì¤€ í”¼ë¡œë„
+    private float _commandInterval = 5f;        // ì¶”ê²©AIì—ê²Œ ëª…ë ¹ ë‚´ë¦¬ëŠ” ì†ë„
+    [SerializeField] private float _respawnCooldown = 15f; // ì¬ë“±ì¥ ì¿¨íƒ€ì„
 
     private float _timer = 0f;
     private float _lastContactTime = float.MinValue;
@@ -39,6 +40,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     public float GlobalStress { get; private set; } = 0f;
     public float AreaAlert { get; private set; } = 0f;
+
+    //Debug
+    public MASTERAI_PHASE CurrentPhase => _currentPhase;
 
     #region Unity LifeCycle
 
@@ -66,19 +70,33 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     #endregion
 
-    #region ±äÀåµµ / °æ°èµµ º¯¼ö ·ÎÁ÷
+    public void SetCurrentZone(ZoneInfo zone)
+    {
+        _playerCurrentZone = zone;
+    }
+
+    public void ClearCurrentZone(ZoneInfo zone)
+    {
+        if (_playerCurrentZone == zone)
+        {
+            _playerCurrentZone = null;
+        }
+    }
+
+
+    #region ê¸´ì¥ë„ / ê²½ê³„ë„ ë³€ìˆ˜ ë¡œì§
 
     private void UpdateGauges()
     {
         float tTime = Time.deltaTime;
 
-        // ÇÇ·Îµµ °ü¸®
+        // í”¼ë¡œë„ ê´€ë¦¬
         if (_currentPhase == MASTERAI_PHASE.ACTIVE)
         {
             float tDist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
             float tSafeDist = 20f;
 
-            // °Å¸®¿¡ µû¸¥ ÇÇ·Îµµ º¯È­
+            // ê±°ë¦¬ì— ë”°ë¥¸ í”¼ë¡œë„ ë³€í™”
             if (tDist > tSafeDist)
             {
                 GlobalStress -= _stressDecreaseRate * 0.5f * tTime;
@@ -97,13 +115,13 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             }
         }
 
-        // °æ°èµµ °ü¸®
+        // ê²½ê³„ë„ ê´€ë¦¬
         if (!_chaseAI.IsChasing() && AreaAlert > 0)
         {
             AreaAlert -= _alertDecreaseRate * tTime;
         }
 
-        // °ª ¹üÀ§
+        // ê°’ ë²”ìœ„
         GlobalStress = Mathf.Clamp(GlobalStress, 0, 150f);
         AreaAlert = Mathf.Clamp(AreaAlert, 0f, 100f);
     }
@@ -114,8 +132,8 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
         if (_currentPhase == MASTERAI_PHASE.DORMANT)
         {
-            // ÇÇ·Îµµ, °æ°èµµ ¾øÀ¸¸é ´Ù½Ã µîÀå
-            // ÄğÅ¸ÀÓ Á¶°Ç Ãß°¡ (_timer >= _respawnCooldown)
+            // í”¼ë¡œë„, ê²½ê³„ë„ ì—†ìœ¼ë©´ ë‹¤ì‹œ ë“±ì¥
+            // ì¿¨íƒ€ì„ ì¡°ê±´ ì¶”ê°€ (_timer >= _respawnCooldown)
             if (GlobalStress <= 0f && AreaAlert <= 0f && _timer >= _respawnCooldown)
             {
                 EnterActiveMode();
@@ -123,7 +141,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         }
         else
         {
-            // ÅğÀå Á¶°Ç - ½ºÆ®·¹½º°¡ ±âÁØÄ¡ ÀÌ»ó, Ãß°İ Áß ¾Æ´Ô, ¸¶Áö¸· Ãß°İ ÈÄ 10ÃÊ ÀÌ»ó
+            // í‡´ì¥ ì¡°ê±´ - ìŠ¤íŠ¸ë ˆìŠ¤ê°€ ê¸°ì¤€ì¹˜ ì´ìƒ, ì¶”ê²© ì¤‘ ì•„ë‹˜, ë§ˆì§€ë§‰ ì¶”ê²© í›„ 10ì´ˆ ì´ìƒ
             bool isSafeTime = (Time.time - _lastContactTime) > 10f;
 
             if (GlobalStress >= _maxStressThreshold && AreaAlert <= 0f && !_chaseAI.IsChasing() && isSafeTime)
@@ -139,9 +157,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     }
     #endregion
 
-    #region ÁÂÇ¥ ±¸ÇÏ±â && ¸í·É ·ÎÁ÷
+    #region ì¢Œí‘œ êµ¬í•˜ê¸° && ëª…ë ¹ ë¡œì§
 
-    //TODO : ´õ ¶È¶ÈÇÑ ¸í·É ·ÎÁ÷ ÇÊ¿ä EX) ÇÃ·¹ÀÌ¾î°¡ ±¸¼®¿¡ °¡¸¸È÷ ÀÖÀ¸¸é Ãß°İ AI°¡ °°Àº zone¸¸ ¼øÂûµ¹°í ÀÖÀ½ <- ¼öÁ¤ÇÊ¿ä
+    //TODO : ë” ë˜‘ë˜‘í•œ ëª…ë ¹ ë¡œì§ í•„ìš” EX) í”Œë ˆì´ì–´ê°€ êµ¬ì„ì— ê°€ë§Œíˆ ìˆìœ¼ë©´ ì¶”ê²© AIê°€ ê°™ì€ zoneë§Œ ìˆœì°°ëŒê³  ìˆìŒ <- ìˆ˜ì •í•„ìš”
     private void GiveNextSearchCommand()
     {
         Vector3 tTargetPos = CalculateTacticalPoint();
@@ -150,7 +168,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         {
             _debugLastTargetPos = tTargetPos;
             _chaseAI.MoveToTarget(tTargetPos);
-            Debug.Log($"[Director] ¼ö»ö ¸í·É: {tTargetPos} (°æ°èµµ: {AreaAlert:F0})");
+            Debug.Log($"[Director] ìˆ˜ìƒ‰ ëª…ë ¹: {tTargetPos} (ê²½ê³„ë„: {AreaAlert:F0})");
         }
     }
 
@@ -158,23 +176,23 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     {
         float tCurrentRadius = Mathf.Lerp(_maxSearch, _minSearch, AreaAlert / 100);
 
-        //ÇÃ·¹ÀÌ¾î ÁÖº¯¿¡ ÀÖ´Â zone °Ë»ç
+        //í”Œë ˆì´ì–´ ì£¼ë³€ì— ìˆëŠ” zone ê²€ì‚¬
         var tHitCollider = Physics.OverlapSphere(_playerTransform.position, tCurrentRadius, _zoneLayerMask, QueryTriggerInteraction.Collide);
 
-        Debug.Log($"[Director] ¼ö»ö ¹İ°æ: {tCurrentRadius:F1}, zone °³¼ö: {tHitCollider.Length}");
+        Debug.Log($"[Director] ìˆ˜ìƒ‰ ë°˜ê²½: {tCurrentRadius:F1}, zone ê°œìˆ˜: {tHitCollider.Length}");
 
         if (tHitCollider.Length > 0)
         {
-            // zoneµé Áß ÇÏ³ª ·£´ı ¼±ÅÃ
+            // zoneë“¤ ì¤‘ í•˜ë‚˜ ëœë¤ ì„ íƒ
             var tRandomCol = tHitCollider[Random.Range(0, tHitCollider.Length)];
             ZoneInfo tSelectZone = tRandomCol.GetComponent<ZoneInfo>();
 
-            // ¼±ÅÃµÈ zone ³»ºÎ ¼ö»ö Æ÷ÀÎÆ® ¹İÈ¯
+            // ì„ íƒëœ zone ë‚´ë¶€ ìˆ˜ìƒ‰ í¬ì¸íŠ¸ ë°˜í™˜
             if (tSelectZone != null)
             {
                 if (AreaAlert > 50f)
                 {
-                    // °æ°èµµ°¡ ³ôÀ¸¸é Àº½ÅÃ³ ¼ö»ö
+                    // ê²½ê³„ë„ê°€ ë†’ìœ¼ë©´ ì€ì‹ ì²˜ ìˆ˜ìƒ‰
                     return tSelectZone.GetNearHidingSpot(_playerTransform.position);
                 }
 
@@ -182,11 +200,11 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             }
         }
 
-        // zoneÀÌ ¾øÀ» °æ¿ì ·£´ı ÁÂÇ¥
+        // zoneì´ ì—†ì„ ê²½ìš° ëœë¤ ì¢Œí‘œ
         return CalculateRandomPoint(tCurrentRadius);
     }
 
-    // ÇÃ·¹ÀÌ¾î ±âÁØ ·£´ı ÁÂÇ¥
+    // í”Œë ˆì´ì–´ ê¸°ì¤€ ëœë¤ ì¢Œí‘œ
     private Vector3 CalculateRandomPoint(float radius)
     {
         Vector2 tRandomCircle = Random.insideUnitCircle.normalized * radius;
@@ -197,7 +215,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             return validPos;
         }
 
-        Debug.Log("ÁÂÇ¥ ±¸ÇÏ±â ½ÇÆĞ! ÇÃ·¹ÀÌ¾î ÁÂÇ¥ ¹İÈ¯");
+        Debug.Log("ì¢Œí‘œ êµ¬í•˜ê¸° ì‹¤íŒ¨! í”Œë ˆì´ì–´ ì¢Œí‘œ ë°˜í™˜");
         return _playerTransform.position;
     }
 
@@ -205,14 +223,14 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     {
         for (int i = 0; i < attemptCount; i++)
         {
-            // 1. Áß½É¿¡¼­ ·£´ıÇÑ ¹æÇâ°ú °Å¸®ÀÇ ÁÂÇ¥ »ı¼º
+            // 1. ì¤‘ì‹¬ì—ì„œ ëœë¤í•œ ë°©í–¥ê³¼ ê±°ë¦¬ì˜ ì¢Œí‘œ ìƒì„±
             Vector2 randomCircle = Random.insideUnitCircle;
             Vector3 randomDir = new Vector3(randomCircle.x, 0, randomCircle.y);
 
-            // ½ÃµµÇÒ ÈÄº¸ ÁÂÇ¥ (Áß½É + ·£´ı º¤ÅÍ)
+            // ì‹œë„í•  í›„ë³´ ì¢Œí‘œ (ì¤‘ì‹¬ + ëœë¤ ë²¡í„°)
             Vector3 candidatePos = center + (randomDir * radius);
 
-            // 2. ÇØ´ç ÁÂÇ¥ ±ÙÃ³(2.0f)¿¡ NavMesh°¡ ÀÖ´ÂÁö È®ÀÎ
+            // 2. í•´ë‹¹ ì¢Œí‘œ ê·¼ì²˜(2.0f)ì— NavMeshê°€ ìˆëŠ”ì§€ í™•ì¸
             NavMeshHit hit;
             if (NavMesh.SamplePosition(candidatePos, out hit, 2.0f, NavMesh.AllAreas))
             {
@@ -221,18 +239,18 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             }
         }
 
-        // ¸ğµç ½Ãµµ ½ÇÆĞ ½Ã
+        // ëª¨ë“  ì‹œë„ ì‹¤íŒ¨ ì‹œ
         result = center;
         return false;
     }
 
     #endregion
 
-    #region »óÅÂ ÀüÈ¯ ·ÎÁ÷
+    #region ìƒíƒœ ì „í™˜ ë¡œì§
 
     private void EnterActiveMode()
     {
-        Debug.Log("[Master AI] Ãß°İ AI È°¼ºÈ­");
+        Debug.Log("[Master AI] ì¶”ê²© AI í™œì„±í™”");
 
         Vector3 tSpawnPos = Vector3.zero;
         ZoneInfo tSpwanZone = GetTacticalSpawnZone();
@@ -252,63 +270,80 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     private void EnterDormantMode()
     {
-        Debug.Log("[Master AI] Ãß°İ AI ºñÈ°¼ºÈ­");
+        //TODO : ê° ì¡´ì˜ í™˜ê¸°êµ¬ ì¢Œí‘œ ì¤‘ì—ì„œ ê°€ì¥ ê°€ê¹Œìš´ ê³³ìœ¼ë¡œ í‡´ê·¼ ëª…ë ¹
 
-        //TODO : ³ªÁß¿¡ È¯±â±¸ Ã£¾Æ¼­ °¡°Ô²û ±¸ÇöÇØ¾ßµÊ
-        _chaseAI.Vanish();
+        // 1. í˜„ì¬ ìœ„ì¹˜ì—ì„œ ê°€ì¥ ê°€ê¹Œìš´ ìŠ¤í° í¬ì¸íŠ¸(í™˜ê¸°êµ¬) ì°¾ê¸°
+        // (ZoneInfoê°€ ì—†ë‹¤ë©´ ê·¸ëƒ¥ í”Œë ˆì´ì–´ ì•ˆ ë³´ì´ëŠ” ê³³ìœ¼ë¡œ)
+        Vector3 retreatPos = CalculateSpawnPos(); // ì„ì‹œë¡œ Fallback ì‚¬ìš©
 
+        if ( _playerCurrentZone != null )
+        {
+            // ê°™ì€ ë°©ì˜ í™˜ê¸°êµ¬ëŠ” í”¼í•˜ê³ , ì¸ì ‘í•œ ë°©ì´ë‚˜ ë³µë„ì˜ í™˜ê¸°êµ¬ë¥¼ ì°¾ëŠ” ê²Œ ì¢‹ìŒ
+            // ì—¬ê¸°ì„œëŠ” ê°„ë‹¨í•˜ê²Œ í˜„ì¬ Zoneì˜ ìŠ¤í° í¬ì¸íŠ¸ ì‚¬ìš©
+            retreatPos = _playerCurrentZone.GetRandomSpawnPoint();
+        }
+
+        // 2. ì¶”ê²© AIì—ê²Œ í‡´ê·¼ ëª…ë ¹
+        _chaseAI.OrderRetreat(retreatPos);
+
+        Debug.Log($"[Director] í‡´ê·¼ ëª…ë ¹ í•˜ë‹¬ -> ëª©í‘œ: {retreatPos}");
+    }
+
+    // ì¶”ê²© AIê°€ í‡´ê·¼ ì™„ë£Œí–ˆì„ë•Œ
+    public void OnChaseAIVanish()
+    {
         _currentPhase = MASTERAI_PHASE.DORMANT;
         GlobalStress = 0f;
         _timer = 0f;
     }
 
-    // ½ºÆùÇÏ±â À§ÇÑ ±ÙÃ³ zone Ã£±â
+    // ìŠ¤í°í•˜ê¸° ìœ„í•œ ê·¼ì²˜ zone ì°¾ê¸°
     private ZoneInfo GetTacticalSpawnZone()
     {
         var candidateZones = _allZones.Where(zone =>
         {
-            if (zone == _playerCurrentZone) return false; // ÇöÀç ¹æ Á¦¿Ü
+            if (zone == _playerCurrentZone) return false; // í˜„ì¬ ë°© ì œì™¸
 
             float dist = Vector3.Distance(zone.transform.position, _playerTransform.position);
-            return dist >= 15.0f && dist <= 35.0f; // ÀûÀıÇÑ °Å¸®
+            return dist >= 15.0f && dist <= 35.0f; // ì ì ˆí•œ ê±°ë¦¬
         }).ToList();
 
         if (candidateZones.Count > 0)
         {
-            // ÈÄº¸ Áß ·£´ı ¼±ÅÃ
+            // í›„ë³´ ì¤‘ ëœë¤ ì„ íƒ
             return candidateZones[Random.Range(0, candidateZones.Count)];
         }
 
-        return null; // ÀûÀıÇÑ ZoneÀ» ¸ø Ã£À½
+        return null; // ì ì ˆí•œ Zoneì„ ëª» ì°¾ìŒ
     }
 
-    // ½ºÆùÇÏ±â À§ÇÑ zoneÀÌ ¾øÀ» °æ¿ì
+    // ìŠ¤í°í•˜ê¸° ìœ„í•œ zoneì´ ì—†ì„ ê²½ìš°
     private Vector3 CalculateSpawnPos()
     {
-        // ÇÃ·¹ÀÌ¾î µÚÂÊ 20m ÁöÁ¡À» ±âÁØÀ¸·Î
+        // í”Œë ˆì´ì–´ ë’¤ìª½ 20m ì§€ì ì„ ê¸°ì¤€ìœ¼ë¡œ
         Vector3 centerPos = _playerTransform.position - _playerTransform.forward * 20f;
         Vector3 resultPos;
 
-        // [¼öÁ¤µÊ] ±× ÁÖº¯ 5m ¹İ°æ ³»¿¡¼­ NavMesh À§ ÁÂÇ¥¸¦ 30¹ø±îÁö Ã£¾Æº½
+        // [ìˆ˜ì •ë¨] ê·¸ ì£¼ë³€ 5m ë°˜ê²½ ë‚´ì—ì„œ NavMesh ìœ„ ì¢Œí‘œë¥¼ 30ë²ˆê¹Œì§€ ì°¾ì•„ë´„
         if (TryGetValidPoint(centerPos, 5.0f, out resultPos, 30))
         {
             return resultPos;
         }
 
-        // µÚÂÊÀÌ ´Ù º®ÀÌ¶ó¼­ ½ÇÆĞÇß´Ù¸é? -> ±×³É ÇÃ·¹ÀÌ¾î ÁÖº¯ ¾Æ¹«µ¥³ª 10m ¹İ°æ¿¡¼­ Ã£À½
+        // ë’¤ìª½ì´ ë‹¤ ë²½ì´ë¼ì„œ ì‹¤íŒ¨í–ˆë‹¤ë©´? -> ê·¸ëƒ¥ í”Œë ˆì´ì–´ ì£¼ë³€ ì•„ë¬´ë°ë‚˜ 10m ë°˜ê²½ì—ì„œ ì°¾ìŒ
         if (TryGetValidPoint(_playerTransform.position, 10.0f, out resultPos, 30))
         {
             return resultPos;
         }
 
-        // ÃÖÈÄÀÇ ¼ö´Ü
+        // ìµœí›„ì˜ ìˆ˜ë‹¨
         return _chaseAI.transform.position;
     }
     #endregion
 
-    #region ¿ÜºÎ API && ÀÌº¥Æ®
+    #region ì™¸ë¶€ API && ì´ë²¤íŠ¸
 
-    // ¼ÒÀ½ ¹ß»ı½Ã
+    // ì†ŒìŒ ë°œìƒì‹œ
     public void ReportNoise(Vector3 noisePos, float loudness)
     {
         _lastContactTime = Time.time;
@@ -317,14 +352,14 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         AreaAlert += tIncreaseAmount;
         GlobalStress += tIncreaseAmount * 0.2f;
 
-        // TODO : ³ªÁß¿¡ ¼ÒÀ½Àº Ãß°İ AI°¡ º¸°í¸¸ ÇÏ±â
-        if (_currentPhase == MASTERAI_PHASE.ACTIVE)
-        {
-            _chaseAI.InVestigateNoise(noisePos);
-        }
+        // TODO : ë‚˜ì¤‘ì— ì†ŒìŒì€ ì¶”ê²© AIê°€ ë³´ê³ ë§Œ í•˜ê¸°
+        //if (_currentPhase == MASTERAI_PHASE.ACTIVE)
+        //{
+        //    _chaseAI.InVestigateNoise(noisePos);
+        //}
     }
 
-    // Ãß°İAI°¡ ÇÃ·¹ÀÌ¾î ¹ß°ß½Ã
+    // ì¶”ê²©AIê°€ í”Œë ˆì´ì–´ ë°œê²¬ì‹œ
     public void ReportPlayerContact()
     {
         _lastContactTime = Time.time;
@@ -339,13 +374,13 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     {
         if (_playerTransform == null) return;
 
-        // ÇöÀç Àû¿ë ÁßÀÎ °¡º¯ ¹İ°æ ±×¸®±â (ÆÄ¶õ»ö -> »¡°£»ö º¯ÇÔ)
+        // í˜„ì¬ ì ìš© ì¤‘ì¸ ê°€ë³€ ë°˜ê²½ ê·¸ë¦¬ê¸° (íŒŒë€ìƒ‰ -> ë¹¨ê°„ìƒ‰ ë³€í•¨)
         float currentRadius = Mathf.Lerp(_maxSearch, _minSearch, AreaAlert / 100f);
         Gizmos.color = Color.Lerp(Color.blue, Color.red, AreaAlert / 100f);
-        Gizmos.color = new Color(Gizmos.color.r, Gizmos.color.g, Gizmos.color.b, 0.2f); // ¹İÅõ¸í
+        Gizmos.color = new Color(Gizmos.color.r, Gizmos.color.g, Gizmos.color.b, 0.2f); // ë°˜íˆ¬ëª…
         Gizmos.DrawWireSphere(_playerTransform.position, currentRadius);
 
-        // ¸¶Áö¸· ¸í·É À§Ä¡
+        // ë§ˆì§€ë§‰ ëª…ë ¹ ìœ„ì¹˜
         if (_debugLastTargetPos != Vector3.zero)
         {
             Gizmos.color = Color.red;

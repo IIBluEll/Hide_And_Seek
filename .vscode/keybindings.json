@@ -1,0 +1,6 @@
+[
+  {
+    "key": "ctrl+shift+z",
+    "command": "settings.cycle.copilot"
+  }
+]
