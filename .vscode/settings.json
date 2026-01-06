@@ -67,5 +67,19 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Hide_And_Seek.slnx"
+    "dotnet.defaultSolution": "Hide_And_Seek.slnx",
+    "settings.cycle": [
+        {
+            "id": "copilot",
+            "overrideWorkspaceSettings": true,
+            "values": [
+                {
+                    "github.copilot.inlineSuggest.enable": false
+                },
+                {
+                    "github.copilot.inlineSuggest.enable": true
+                }
+            ]
+        },
+    ],
 }
