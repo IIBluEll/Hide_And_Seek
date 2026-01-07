@@ -346,17 +346,26 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // 소음 발생시
     public void ReportNoise(Vector3 noisePos, float loudness)
     {
-        _lastContactTime = Time.time;
+        float hearingDistance = 20.0f * loudness;
+        float distToAI = Vector3.Distance(noisePos, _chaseAI.transform.position);
 
-        float tIncreaseAmount = loudness * 30f;
-        AreaAlert += tIncreaseAmount;
-        GlobalStress += tIncreaseAmount * 0.2f;
+        if ( distToAI <= hearingDistance )
+        {
+            // 들림! -> 경계도 상승 및 조사 명령
+            float increaseAmount = loudness * 30f;
+            AreaAlert += increaseAmount;
+            GlobalStress += increaseAmount * 0.2f;
 
-        // TODO : 나중에 소음은 추격 AI가 보고만 하기
-        //if (_currentPhase == MASTERAI_PHASE.ACTIVE)
-        //{
-        //    _chaseAI.InVestigateNoise(noisePos);
-        //}
+            if ( _currentPhase == MASTERAI_PHASE.ACTIVE )
+            {
+                _chaseAI.InvestgateNoise(noisePos);
+            }
+        }
+        else
+        {
+            // 안 들림 (너무 멂) -> 무시
+            Debug.Log("소리가 났지만 AI가 못 들음");
+        }
     }
 
     // 추격AI가 플레이어 발견시

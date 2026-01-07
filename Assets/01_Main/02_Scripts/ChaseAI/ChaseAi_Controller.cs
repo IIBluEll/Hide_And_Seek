@@ -98,8 +98,6 @@ public class ChaseAI_Controller : MonoBehaviour
     // 명령 받을 수 있는 상태 체크
     public bool IsAvailableForCommand()
     {
-        
-
         return gameObject.activeSelf && _currentState == CHASEAI_STATE.IDLE && !_isWaiting;
     }
 
