@@ -5509,6 +5509,7 @@ MonoBehaviour:
   _hidingSpots: []
   _spawnPoints:
   - {fileID: 36693595}
+  _ventPoint: {fileID: 36693595}
 --- !u!1 &923671167
 GameObject:
   m_ObjectHideFlags: 0
@@ -7286,6 +7287,7 @@ MonoBehaviour:
   _hidingSpots: []
   _spawnPoints:
   - {fileID: 1683135671}
+  _ventPoint: {fileID: 1683135671}
 --- !u!1 &1384762310
 GameObject:
   m_ObjectHideFlags: 0
@@ -8037,6 +8039,7 @@ MonoBehaviour:
   _hidingSpots: []
   _spawnPoints:
   - {fileID: 475189597}
+  _ventPoint: {fileID: 475189597}
 --- !u!1 &1473314214
 GameObject:
   m_ObjectHideFlags: 0
@@ -8491,6 +8494,7 @@ MonoBehaviour:
   _hidingSpots: []
   _spawnPoints:
   - {fileID: 365821919}
+  _ventPoint: {fileID: 365821919}
 --- !u!1 &1565298586
 GameObject:
   m_ObjectHideFlags: 0

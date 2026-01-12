@@ -15,6 +15,11 @@ public class ZoneInfo : MonoBehaviour
     [Space(10f), Header("AI 스폰 지점")]
     [SerializeField] private List<Transform> _spawnPoints = new();
 
+    [Space(10f), Header("벤트")]
+    [SerializeField] private Transform _ventPoint;
+
+    public Transform VentPoint => _ventPoint;
+
     public bool IsPlayerInZone(Vector3 playerPos)
     {
         if(ZoneBounds == null) 
