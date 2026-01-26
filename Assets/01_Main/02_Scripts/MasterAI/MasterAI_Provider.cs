@@ -1,9 +1,7 @@
 ﻿using HM.CodeBase;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.AppUI.Navigation;
 using UnityEngine;
-using UnityEngine.AI;
 
 public enum MASTERAI_PHASE
 {
@@ -38,13 +36,21 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     private Vector3 _debugLastTargetPos = Vector3.zero;
     private MASTERAI_PHASE _currentPhase = MASTERAI_PHASE.DORMANT;
 
-    public float GlobalStress { get; private set; } = 0f;
-    public float AreaAlert { get; private set; } = 0f;
+    //public float GlobalStress { get; private set; } = 0f;
+    //public float AreaAlert { get; private set; } = 0f;
+
+    [Header("난이도")]
+    [SerializeField] private GauageConfig _difficultyConfig;
+    [SerializeField] private MASTERAI_DIFFICULTY _difficulty = MASTERAI_DIFFICULTY.NORMAL;
 
     //Debug
     public MASTERAI_PHASE CurrentPhase => _currentPhase;
 
     public Managae_CalculatePoint Manage_SearchPoint;
+    public Manage_AIGauge Manage_Gauge;
+
+    public float GlobalStress => Manage_Gauge != null ? Manage_Gauge.GlobalStress : 0f;
+    public float AreaAlert => Manage_Gauge != null ? Manage_Gauge.AreaAlert : 0f;
 
     #region Unity LifeCycle
 
@@ -52,13 +58,26 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     {
         _allZones = FindObjectsOfType<ZoneInfo>().ToList();
 
-        if (_chaseAI != null && _playerTransform != null)
+        Manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform, _zoneLayerMask, _maxSearch, _minSearch);
+
+        Manage_Gauge = new Manage_AIGauge();
+
+        // 난이도 설정 주입
+        if (_difficultyConfig != null)
+        {
+            GauageConfigData tConfigData = _difficultyConfig.GetConfigData(_difficulty);
+
+            _stressDecreaseRate = tConfigData.StressDecreaseRate;
+            _alertDecreaseRate = tConfigData.AlertDecreaseRate;
+            _maxStressThreshold = tConfigData.MaxStressThreshold;
+            _commandInterval = tConfigData.CommandInterval;
+        }
+
+        if ( _chaseAI != null && _playerTransform != null )
         {
             _chaseAI.Initalize(_playerTransform);
             _chaseAI.Vanish();
         }
-
-        Manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform, _zoneLayerMask, _maxSearch, _minSearch);
     }
 
     private void Update()
@@ -92,42 +111,14 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     private void UpdateGauges()
     {
-        float tTime = Time.deltaTime;
-
-        // 피로도 관리
-        if (_currentPhase == MASTERAI_PHASE.ACTIVE)
+        if ( _difficultyConfig != null )
         {
-            float tDist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
-            float tSafeDist = 20f;
-
-            // 거리에 따른 피로도 변화
-            if (tDist > tSafeDist)
-            {
-                GlobalStress -= _stressDecreaseRate * 0.5f * tTime;
-            }
-            else
-            {
-                float tTooClose = (tSafeDist - tDist) * 0.8f;
-                GlobalStress += tTooClose * tTime;
-            }
+            GauageConfigData tConfigData = _difficultyConfig.GetConfigData(_difficulty);
+            _stressDecreaseRate = tConfigData.StressDecreaseRate;
+            _alertDecreaseRate = tConfigData.AlertDecreaseRate;
+            _maxStressThreshold = tConfigData.MaxStressThreshold;
+            _commandInterval = tConfigData.CommandInterval;
         }
-        else
-        {
-            if (GlobalStress > 0)
-            {
-                GlobalStress -= _stressDecreaseRate * tTime;
-            }
-        }
-
-        // 경계도 관리
-        if (!_chaseAI.IsChasing() && AreaAlert > 0)
-        {
-            AreaAlert -= _alertDecreaseRate * tTime;
-        }
-
-        // 값 범위
-        GlobalStress = Mathf.Clamp(GlobalStress, 0, 150f);
-        AreaAlert = Mathf.Clamp(AreaAlert, 0f, 100f);
     }
 
     private void ProcessMasterLogic()
@@ -205,8 +196,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     public void OnChaseAIVanish()
     {
         _currentPhase = MASTERAI_PHASE.DORMANT;
-        GlobalStress = 0f;
         _timer = 0f;
+
+        Manage_Gauge.OnChaseAIVanish();
     }
     #endregion
 
@@ -215,16 +207,10 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // 소음 발생시
     public void ReportNoise(Vector3 noisePos, float loudness)
     {
-        float hearingDistance = 20.0f * loudness;
-        float distToAI = Vector3.Distance(noisePos, _chaseAI.transform.position);
+        bool isHeard = Manage_Gauge.ReportNoise(noisePos, loudness, _chaseAI.transform.position);
 
-        if ( distToAI <= hearingDistance )
+        if ( isHeard )
         {
-            // 들림! -> 경계도 상승 및 조사 명령
-            float increaseAmount = loudness * 30f;
-            AreaAlert += increaseAmount;
-            GlobalStress += increaseAmount * 0.2f;
-
             if ( _currentPhase == MASTERAI_PHASE.ACTIVE )
             {
                 _chaseAI.InvestgateNoise(noisePos);
@@ -232,7 +218,6 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         }
         else
         {
-            // 안 들림 (너무 멂) -> 무시
             Debug.Log("소리가 났지만 AI가 못 들음");
         }
     }
@@ -241,8 +226,8 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     public void ReportPlayerContact()
     {
         _lastContactTime = Time.time;
-        AreaAlert = 100f;
-        GlobalStress += 10f * Time.deltaTime;
+        // 게이지 매니저에게 위임
+        Manage_Gauge.ReportPlayerContact(Time.deltaTime);
     }
 
     #endregion
