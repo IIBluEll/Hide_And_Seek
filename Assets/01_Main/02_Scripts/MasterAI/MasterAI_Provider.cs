@@ -29,7 +29,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     [SerializeField] private ManageZone _zoneManager;
     [SerializeField] private MasterState_Dormant _dormantState;
     [SerializeField] private MasterState_Active _activeState;
-    public Managae_CalculatePoint Manage_SearchPoint;
+    [SerializeField] private Managae_CalculatePoint _manage_SearchPoint;
 
     private float _lastContactTime = float.MinValue;
 
@@ -56,7 +56,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             _chaseAI.Vanish();
         }
 
-        Manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform , _zoneLayerMask , _maxSearch , _minSearch);
+        _manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform , _zoneLayerMask , _maxSearch , _minSearch);
 
         ChangePhase(MASTERAI_PHASE.DORMANT);
     }
@@ -107,7 +107,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
         Vector3 spawnPos = (tSpawnZone != null && tSpawnZone.VentPoint != null)
             ? tSpawnZone.VentPoint.position
-            : Manage_SearchPoint.CalculateVentPoint().position; // 벤트 못찾았을떼
+            : _manage_SearchPoint.CalculateVentPoint().position; // 벤트 못찾았을떼
 
         _chaseAI.Spawn(spawnPos);
     }
@@ -115,7 +115,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     //TODO : 더 똑똑한 명령 로직 필요 EX) 플레이어가 구석에 가만히 있으면 추격 AI가 같은 zone만 순찰돌고 있음 <- 수정필요
     public void OrderSearch()
     {
-        Vector3 tTargetPos = Manage_SearchPoint.CalculateSearchPoint(_gaugeSystem.AlertRatio);
+        Vector3 tTargetPos = _manage_SearchPoint.CalculateSearchPoint(_gaugeSystem.AlertRatio);
 
         if(tTargetPos != Vector3.zero)
         {
@@ -135,7 +135,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         }
         else
         {
-            _chaseAI.OrderRetreat(Manage_SearchPoint.CalculateVentPoint().position);
+            _chaseAI.OrderRetreat(_manage_SearchPoint.CalculateVentPoint().position);
         }
     }
 
