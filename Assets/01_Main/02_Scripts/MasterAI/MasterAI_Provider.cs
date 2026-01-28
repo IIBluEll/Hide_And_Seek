@@ -20,197 +20,162 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     [SerializeField] private float _maxSearch = 25f;
     [SerializeField] private float _minSearch = 5f;
 
-    [Header("지표 수치 변수")]
-    private float _stressDecreaseRate = 2f;     // 피로도 감소
-    private float _alertDecreaseRate = 5f;      // 경계도 감소
-    private float _maxStressThreshold = 100f;   // 퇴근 기준 피로도
-    private float _commandInterval = 5f;        // 추격AI에게 명령 내리는 속도
+    [Space(10f), Header("타이머 설정")]
     [SerializeField] private float _respawnCooldown = 15f; // 재등장 쿨타임
+    [SerializeField] private float _commandInterval = 5f;  // 명령 간격
 
-    private float _timer = 0f;
+    [Space(10f), Header("시스템 모듈")]
+    [SerializeField] private Manage_Gauage _gaugeSystem;
+    [SerializeField] private ManageZone _zoneManager;
+    [SerializeField] private MasterState_Dormant _dormantState;
+    [SerializeField] private MasterState_Active _activeState;
+    public Managae_CalculatePoint Manage_SearchPoint;
+
     private float _lastContactTime = float.MinValue;
-
-    private List<ZoneInfo> _allZones;
-    private ZoneInfo _playerCurrentZone;
 
     private Vector3 _debugLastTargetPos = Vector3.zero;
     private MASTERAI_PHASE _currentPhase = MASTERAI_PHASE.DORMANT;
-
-    //public float GlobalStress { get; private set; } = 0f;
-    //public float AreaAlert { get; private set; } = 0f;
-
-    [Header("난이도")]
-    [SerializeField] private GauageConfig _difficultyConfig;
-    [SerializeField] private MASTERAI_DIFFICULTY _difficulty = MASTERAI_DIFFICULTY.NORMAL;
+    private IMasterState _currentStateLogic;
 
     //Debug
-    public MASTERAI_PHASE CurrentPhase => _currentPhase;
-
-    public Managae_CalculatePoint Manage_SearchPoint;
-    public Manage_AIGauge Manage_Gauge;
-
-    public float GlobalStress => Manage_Gauge != null ? Manage_Gauge.GlobalStress : 0f;
-    public float AreaAlert => Manage_Gauge != null ? Manage_Gauge.AreaAlert : 0f;
+    public Manage_Gauage GaugeSystem => _gaugeSystem;
+    public ChaseAI_Controller ChaseAI => _chaseAI;
+    public ManageZone ZoneMng => _zoneManager;
+    public float LastContactTime => _lastContactTime;
 
     #region Unity LifeCycle
 
     private void Start()
     {
-        _allZones = FindObjectsOfType<ZoneInfo>().ToList();
-
-        Manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform, _zoneLayerMask, _maxSearch, _minSearch);
-
-        Manage_Gauge = new Manage_AIGauge();
-
-        // 난이도 설정 주입
-        if (_difficultyConfig != null)
-        {
-            GauageConfigData tConfigData = _difficultyConfig.GetConfigData(_difficulty);
-
-            _stressDecreaseRate = tConfigData.StressDecreaseRate;
-            _alertDecreaseRate = tConfigData.AlertDecreaseRate;
-            _maxStressThreshold = tConfigData.MaxStressThreshold;
-            _commandInterval = tConfigData.CommandInterval;
-        }
+        _zoneManager.Initialize();
+        _gaugeSystem.Reset();
 
         if ( _chaseAI != null && _playerTransform != null )
         {
             _chaseAI.Initalize(_playerTransform);
             _chaseAI.Vanish();
         }
+
+        Manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform , _zoneLayerMask , _maxSearch , _minSearch);
+
+        ChangePhase(MASTERAI_PHASE.DORMANT);
     }
 
     private void Update()
     {
-        if (_chaseAI == null || _playerTransform == null)
+        if ( _chaseAI == null || _playerTransform == null )
         {
             return;
         }
 
-        UpdateGauges();
-        ProcessMasterLogic();
+        float dist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
+
+        _gaugeSystem.UpdateGauages(Time.deltaTime , dist , _chaseAI.IsChasing() , _currentPhase);
+
+        _currentStateLogic?.Update(this);
     }
 
     #endregion
 
-    public void SetCurrentZone(ZoneInfo zone)
+    #region State 관리 && State별 행동
+
+    public void ChangePhase(MASTERAI_PHASE newPhase)
     {
-        _playerCurrentZone = zone;
+        _currentStateLogic?.Exit(this);
+
+        _currentPhase = newPhase;
+        switch(newPhase)
+        {
+            case MASTERAI_PHASE.DORMANT:
+                
+                _currentStateLogic = _dormantState;
+                break;
+
+            case MASTERAI_PHASE.ACTIVE:
+
+                _currentStateLogic = _activeState;
+                break;
+        }
+
+        _currentStateLogic?.Enter(this);
     }
 
-    public void ClearCurrentZone(ZoneInfo zone)
+    public void OrderSpawn()
     {
-        if (_playerCurrentZone == zone)
+        Debug.Log("[Master AI] 추격 AI 스폰 명령");
+        ZoneInfo tSpawnZone = _zoneManager.GetRandomZoneNotPlayer(true);
+
+        Vector3 spawnPos = (tSpawnZone != null && tSpawnZone.VentPoint != null)
+            ? tSpawnZone.VentPoint.position
+            : Manage_SearchPoint.CalculateVentPoint().position; // 벤트 못찾았을떼
+
+        _chaseAI.Spawn(spawnPos);
+    }
+
+    //TODO : 더 똑똑한 명령 로직 필요 EX) 플레이어가 구석에 가만히 있으면 추격 AI가 같은 zone만 순찰돌고 있음 <- 수정필요
+    public void OrderSearch()
+    {
+        Vector3 tTargetPos = Manage_SearchPoint.CalculateSearchPoint(_gaugeSystem.AlertRatio);
+
+        if(tTargetPos != Vector3.zero)
         {
-            _playerCurrentZone = null;
+            _chaseAI.MoveToTarget(tTargetPos);
+            Debug.Log($"[Director] 수색 명령: {tTargetPos} (경계도: {_gaugeSystem.AreaAlert:F0})");
         }
     }
 
-
-    #region 긴장도 / 경계도 변수 로직
-
-    private void UpdateGauges()
+    public void OrderRetreat()
     {
-        if ( _difficultyConfig != null )
-        {
-            GauageConfigData tConfigData = _difficultyConfig.GetConfigData(_difficulty);
-            _stressDecreaseRate = tConfigData.StressDecreaseRate;
-            _alertDecreaseRate = tConfigData.AlertDecreaseRate;
-            _maxStressThreshold = tConfigData.MaxStressThreshold;
-            _commandInterval = tConfigData.CommandInterval;
-        }
-    }
+        ZoneInfo retreatZone = _zoneManager.GetRandomZoneNotPlayer(true);
 
-    private void ProcessMasterLogic()
-    {
-        _timer += Time.deltaTime;
-
-        if (_currentPhase == MASTERAI_PHASE.DORMANT)
+        if ( retreatZone != null && retreatZone.VentPoint != null )
         {
-            // 피로도, 경계도 없으면 다시 등장
-            // 쿨타임 조건 추가 (_timer >= _respawnCooldown)
-            if (GlobalStress <= 0f && AreaAlert <= 0f && _timer >= _respawnCooldown)
-            {
-                EnterActiveMode();
-            }
+            _chaseAI.OrderRetreat(retreatZone.VentPoint.position);
+            Debug.Log($"[Director] 퇴근 명령 -> {retreatZone.name}");
         }
         else
         {
-            // 퇴장 조건 - 스트레스가 기준치 이상, 추격 중 아님, 마지막 추격 후 10초 이상
-            bool isSafeTime = (Time.time - _lastContactTime) > 10f;
-
-            if (GlobalStress >= _maxStressThreshold && AreaAlert <= 0f && !_chaseAI.IsChasing() && isSafeTime)
-            {
-                EnterDormantMode();
-            }
-            else if (_timer >= _commandInterval && _chaseAI.IsAvailableForCommand())
-            {
-                _timer = 0;
-                GiveNextSearchCommand();
-            }
+            _chaseAI.OrderRetreat(Manage_SearchPoint.CalculateVentPoint().position);
         }
-    }
-    #endregion
-
-    #region 좌표 구하기 && 명령 로직
-
-    //TODO : 더 똑똑한 명령 로직 필요 EX) 플레이어가 구석에 가만히 있으면 추격 AI가 같은 zone만 순찰돌고 있음 <- 수정필요
-    private void GiveNextSearchCommand()
-    {
-        //Vector3 tTargetPos = CalculateTacticalPoint();
-
-        Vector3 tTargetPos = Manage_SearchPoint.CalculateSearchPoint(AreaAlert / 100f);
-
-        if (tTargetPos != Vector3.zero)
-        {
-            _debugLastTargetPos = tTargetPos;
-            _chaseAI.MoveToTarget(tTargetPos);
-            Debug.Log($"[Director] 수색 명령: {tTargetPos} (경계도: {AreaAlert:F0})");
-        }
-    }
-    #endregion
-
-    #region 상태 전환 로직
-
-    private void EnterActiveMode()
-    {
-        Debug.Log("[Master AI] 추격 AI 활성화");
-
-        Vector3 tSpawnPos = Manage_SearchPoint.CalculateVentPoint().position;
-
-        _currentPhase = MASTERAI_PHASE.ACTIVE;
-        _chaseAI.Spawn(tSpawnPos);
-    }
-
-    private void EnterDormantMode()
-    {
-        //TODO : 각 존의 환기구 좌표 중에서 가장 가까운 곳으로 퇴근 명령
-        Vector3 retreatPos = Manage_SearchPoint.CalculateVentPoint().position;
-        
-        _chaseAI.OrderRetreat(retreatPos);
-
-        Debug.Log($"[Director] 퇴근 명령 하달 -> 목표: {retreatPos}");
     }
 
     // 추격 AI가 퇴근 완료했을때
     public void OnChaseAIVanish()
     {
         _currentPhase = MASTERAI_PHASE.DORMANT;
-        _timer = 0f;
-
-        Manage_Gauge.OnChaseAIVanish();
     }
+    #endregion
+
+
+    #region Zone 관리
+
+    public void SetCurrentZone(ZoneInfo zone)
+    {
+        _zoneManager.SetPlayerZone(zone);
+    }
+
+    public void ClearCurrentZone(ZoneInfo zone)
+    {
+        _zoneManager.ClearPlayerZone(zone);
+    }
+
     #endregion
 
     #region 외부 API && 이벤트
 
     // 소음 발생시
-    public void ReportNoise(Vector3 noisePos, float loudness)
+    public void ReportNoise(Vector3 noisePos , float loudness)
     {
-        bool isHeard = Manage_Gauge.ReportNoise(noisePos, loudness, _chaseAI.transform.position);
+        float hearingDistance = 20.0f * loudness;
+        float distToAI = Vector3.Distance(noisePos, _chaseAI.transform.position);
 
-        if ( isHeard )
+        if ( distToAI <= hearingDistance )
         {
+            // 들림! -> 경계도 상승 및 조사 명령
+            float increaseAmount = loudness * 30f;
+            _gaugeSystem.IncreaseAlert(increaseAmount);
+            _gaugeSystem.IncreaseStress(increaseAmount * 0.2f);
+
             if ( _currentPhase == MASTERAI_PHASE.ACTIVE )
             {
                 _chaseAI.InvestgateNoise(noisePos);
@@ -218,6 +183,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
         }
         else
         {
+            // 안 들림 (너무 멂) -> 무시
             Debug.Log("소리가 났지만 AI가 못 들음");
         }
     }
@@ -226,8 +192,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     public void ReportPlayerContact()
     {
         _lastContactTime = Time.time;
-        // 게이지 매니저에게 위임
-        Manage_Gauge.ReportPlayerContact(Time.deltaTime);
+        _gaugeSystem.OnPlayerContact(Time.deltaTime);
     }
 
     #endregion
@@ -235,20 +200,21 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // Debug
     private void OnDrawGizmos()
     {
-        if (_playerTransform == null) return;
+        if ( _playerTransform == null ) return;
 
         // 현재 적용 중인 가변 반경 그리기 (파란색 -> 빨간색 변함)
-        float currentRadius = Mathf.Lerp(_maxSearch, _minSearch, AreaAlert / 100f);
-        Gizmos.color = Color.Lerp(Color.blue, Color.red, AreaAlert / 100f);
-        Gizmos.color = new Color(Gizmos.color.r, Gizmos.color.g, Gizmos.color.b, 0.2f); // 반투명
-        Gizmos.DrawWireSphere(_playerTransform.position, currentRadius);
+        float currentRadius = Mathf.Lerp(_maxSearch, _minSearch, _gaugeSystem.AlertRatio);
+
+        Gizmos.color = Color.Lerp(Color.blue , Color.red , _gaugeSystem.AlertRatio);
+        Gizmos.color = new Color(Gizmos.color.r , Gizmos.color.g , Gizmos.color.b , 0.2f); // 반투명
+        Gizmos.DrawWireSphere(_playerTransform.position , currentRadius);
 
         // 마지막 명령 위치
-        if (_debugLastTargetPos != Vector3.zero)
+        if ( _debugLastTargetPos != Vector3.zero )
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawSphere(_debugLastTargetPos, 0.3f);
-            Gizmos.DrawLine(_chaseAI.transform.position, _debugLastTargetPos);
+            Gizmos.DrawSphere(_debugLastTargetPos , 0.3f);
+            Gizmos.DrawLine(_chaseAI.transform.position , _debugLastTargetPos);
         }
     }
 }
