@@ -4227,6 +4227,8 @@ MonoBehaviour:
   _maxSearch: 25
   _minSearch: 5
   _respawnCooldown: 5
+  _difficultyConfig: {fileID: 11400000, guid: 01446b10f98c7024fa9470205883457e, type: 2}
+  _difficulty: 1
 --- !u!4 &706412612
 Transform:
   m_ObjectHideFlags: 0

@@ -101,6 +101,12 @@ public class ChaseAI_Controller : MonoBehaviour
         return gameObject.activeSelf && _currentState == CHASEAI_STATE.IDLE && !_isWaiting;
     }
 
+    //퇴근 중인지
+    public bool IsRetreating()
+    {
+        return _currentState == CHASEAI_STATE.RETREAT;
+    }
+
     // 추격 상태인지 체크
     public bool IsChasing()
     {
