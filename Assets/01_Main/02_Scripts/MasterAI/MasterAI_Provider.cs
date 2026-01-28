@@ -20,10 +20,6 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     [SerializeField] private float _maxSearch = 25f;
     [SerializeField] private float _minSearch = 5f;
 
-    [Space(10f), Header("타이머 설정")]
-    [SerializeField] private float _respawnCooldown = 15f; // 재등장 쿨타임
-    [SerializeField] private float _commandInterval = 5f;  // 명령 간격
-
     [Space(10f), Header("시스템 모듈")]
     [SerializeField] private Manage_Gauage _gaugeSystem;
     [SerializeField] private ManageZone _zoneManager;
