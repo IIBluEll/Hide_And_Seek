@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 
-public class Managae_CalculatePoint
+public class ManagaeCalculatePoint
 {
     private Transform _chaseTransform;
     private Transform _playerTransform;
@@ -13,7 +13,7 @@ public class Managae_CalculatePoint
     //TODO : 벤트 수색 반경을 MasterAI에서 받아올것인가?
     private float _maxVentSearch = 20f;
 
-    public Managae_CalculatePoint(Transform chaseAiTransform ,Transform playerTransform, LayerMask zoneLayerMask, float maxSearchRadius, float minSearchRadius)
+    public ManagaeCalculatePoint(Transform chaseAiTransform ,Transform playerTransform, LayerMask zoneLayerMask, float maxSearchRadius, float minSearchRadius)
     {
         _chaseTransform = chaseAiTransform;
         _playerTransform = playerTransform;

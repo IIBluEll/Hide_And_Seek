@@ -270,33 +270,56 @@ public class ChaseAI_Controller : MonoBehaviour
 
     #region  추격 시스템 로직
 
-    private void DetectPlayer()
+    // 플레이어가 시야에 있는지 체크
+    private bool IsPlayerVisible()
     {
+        if(_targetPlayer == null)
+        {
+            return false;
+        }
+
         // 거리 체크
-        float dist = Vector3.Distance(transform.position, _targetPlayer.position);
-        if ( dist > _sightRange ) return;
+        float tDist = Vector3.Distance(transform.position, _targetPlayer.position);
+        if( tDist > _sightRange )
+        {
+            return false;
+        }
 
-        // 시야각 체크 (앞선 코드와 동일한 로직)
-        Vector3 targetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
-        if ( targetLocal.z < 0 ) return;
+        // 시야각 체크
+        Vector3 tTargetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
+        if( tTargetLocal.z < 0 )
+        {
+            return false;
+        }
 
-        float angleH = Mathf.Atan2(targetLocal.x, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleH) > _horizontalSightAngle * 0.5f ) return;
+        float tAngleH = Mathf.Atan2(tTargetLocal.x, tTargetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(tAngleH) > _horizontalSightAngle * 0.5f ) return false;
 
-        float angleV = Mathf.Atan2(targetLocal.y, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleV) > _verticalSightAngle * 0.5f ) return;
+        float tAngleV = Mathf.Atan2(tTargetLocal.y, tTargetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(tAngleV) > _verticalSightAngle * 0.5f ) return false;
 
         // 장애물 체크
-        Vector3 dir = (_targetPlayer.position - _eyeTransform.position).normalized;
-        if ( !Physics.Raycast(_eyeTransform.position , dir , dist , _obstacleMask) )
+        Vector3 tDir = (_targetPlayer.position - _eyeTransform.position).normalized;
+
+        // 레이캐스트로 장애물 확인
+        if ( Physics.Raycast(_eyeTransform.position, tDir , tDist , _obstacleMask))
         {
-            // [발견!]
+            return false;
+        }
+
+        return true;
+    }
+
+    private void DetectPlayer()
+    {
+        if ( IsPlayerVisible() )
+        {
+            // 발견
             if ( _currentState != CHASEAI_STATE.CHASE )
             {
                 StartChase();
             }
 
-            // [보고] 마스터 AI에게 "나 쟤 보고 있음" 보고 -> 경계도 Max, 스트레스 상승
             MasterAI_Provider.Instance.ReportPlayerContact();
         }
     }
@@ -313,10 +336,23 @@ public class ChaseAI_Controller : MonoBehaviour
     {
         if ( _targetPlayer == null ) return;
 
-        // 추격 중엔 계속 플레이어 위치로 갱신
-        _agent.SetDestination(_targetPlayer.position);
-
-        // TODO: 거리가 너무 멀어지면 추격 포기하고 IDLE/SEARCH로 돌아가는 로직 필요
+        if ( IsPlayerVisible() )
+        {
+            // 플레이어가 시야에 있으면 계속 추격
+            _agent.SetDestination(_targetPlayer.position);
+        }
+        else
+        {
+            // 시야에서 플레이어 놓침
+            if(!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
+            {
+                if(!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
+                {
+                    Debug.Log("플레이어 놓침. 마지막 위치 수색 전환");
+                    ChangeState(CHASEAI_STATE.INVESTIGATE);
+                }
+            }
+        }
     }
 
     #endregion

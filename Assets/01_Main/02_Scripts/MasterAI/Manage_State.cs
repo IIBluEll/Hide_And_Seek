@@ -11,9 +11,6 @@ public interface IMasterState
 [System.Serializable]
 public class MasterState_Dormant : IMasterState
 {
-    [Header("변수")]
-    [SerializeField] private float _respawnCooldown = 15f;
-
     private float _timer;
 
     public void Enter(MasterAI_Provider masterAI)
@@ -26,7 +23,7 @@ public class MasterState_Dormant : IMasterState
     {
         _timer += Time.deltaTime;
         
-        if(_timer >= _respawnCooldown && masterAI.GaugeSystem.IsStressZero)
+        if(_timer >= masterAI.ConfigData.RespawnCooldown && masterAI.GaugeSystem.IsStressZero)
         {
             masterAI.ChangePhase(MASTERAI_PHASE.ACTIVE);
         }
@@ -39,9 +36,6 @@ public class MasterState_Dormant : IMasterState
 [System.Serializable]
 public class MasterState_Active : IMasterState
 {
-    [Header("변수")]
-    [SerializeField] private float _commandInterval = 5f;
-
     private float _timer;
 
     public void Enter(MasterAI_Provider masterAI)
@@ -60,7 +54,7 @@ public class MasterState_Active : IMasterState
             return;
         }
 
-        if ( _timer >= _commandInterval && masterAI.ChaseAI.IsAvailableForCommand() && !masterAI.ChaseAI.IsRetreating() )
+        if ( _timer >= masterAI.ConfigData.CommandInterval && masterAI.ChaseAI.IsAvailableForCommand() && !masterAI.ChaseAI.IsRetreating() )
         {
             _timer = 0f;
             masterAI.OrderSearch();
@@ -77,7 +71,7 @@ public class MasterState_Active : IMasterState
     {
         bool isSafeTime = (Time.time - context.LastContactTime) > 10f;
 
-        return context.GaugeSystem.IsMaxStressReached   
+        return context.GaugeSystem.IsMaxStressReached(context.ConfigData)   
                && !context.ChaseAI.IsChasing()    
                && !context.ChaseAI.IsRetreating() 
                && isSafeTime;                     
