@@ -67,9 +67,11 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             return;
         }
 
-        float dist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
+        float tDist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
 
-        _gaugeSystem.UpdateGauages(Time.deltaTime , dist , _chaseAI.IsChasing() , _currentPhase, _configData);
+        bool tIsRetreating = _chaseAI.IsRetreating();
+
+        _gaugeSystem.UpdateGauages(Time.deltaTime , tDist , tIsRetreating, _chaseAI.IsChasing() , _currentPhase, _configData);
 
         _currentStateLogic?.Update(this);
     }

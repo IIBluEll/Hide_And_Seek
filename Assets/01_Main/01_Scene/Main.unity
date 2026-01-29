@@ -4219,16 +4219,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e6451c9b4c59124aa91154d4b04e198, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MasterAI_Provider
+  _configData: {fileID: 11400000, guid: cbbe47b0c882c7040b70f34b7178dc83, type: 2}
   _chaseAI: {fileID: 1802359723}
   _playerTransform: {fileID: 493257628}
   _zoneLayerMask:
     serializedVersion: 2
     m_Bits: 128
-  _maxSearch: 25
-  _minSearch: 5
-  _respawnCooldown: 5
-  _difficultyConfig: {fileID: 11400000, guid: 01446b10f98c7024fa9470205883457e, type: 2}
-  _difficulty: 1
+  _gaugeSystem:
+    GlobalStress: 0
+    AreaAlert: 0
+  _zoneManager:
+    _currentZone: {fileID: 0}
 --- !u!4 &706412612
 Transform:
   m_ObjectHideFlags: 0
@@ -7207,12 +7208,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 004c05fafd62a6e4f825f59104d3aedd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIDebugUI
-  _txtGlobalState: {fileID: 1387887104}
-  _txtValues: {fileID: 486910611}
-  _sliderStress: {fileID: 1506819790}
-  _fillStress: {fileID: 399742520}
-  _sliderAlert: {fileID: 1452871517}
-  _fillAlert: {fileID: 7186337}
 --- !u!1 &1384261919
 GameObject:
   m_ObjectHideFlags: 0

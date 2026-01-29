@@ -13,8 +13,13 @@ public class ManageGauage
 
     public float AlertRatio => Mathf.Clamp01(AreaAlert / 100f);
 
-    public void UpdateGauages(float deltaTime, float distanceToPlayer, bool isChasing, MASTERAI_PHASE currentPhase, MasterAI_Config config )
+    public void UpdateGauages(float deltaTime, float distanceToPlayer, bool isChasing, bool isRetreating, MASTERAI_PHASE currentPhase, MasterAI_Config config )
     {
+        if(isRetreating)
+        {
+            return;
+        }    
+
         if ( currentPhase == MASTERAI_PHASE.ACTIVE )
         {
             if ( distanceToPlayer > config.SafeDistance )
@@ -29,13 +34,13 @@ public class ManageGauage
         }
         else
         {
+            //TODO : AI가 퇴근 도중에도 긴장도가 떨어짐 -> 수정 필요
             if ( GlobalStress > 0 )
             {
                 GlobalStress -= config.StressDecreaseRate * 10f * deltaTime;
             }
         }
-
-        //TODO : AI가 퇴근 도중에도 긴장도가 떨어짐 -> 수정 필요
+        
         if ( !isChasing && AreaAlert > 0 )
         {
             AreaAlert -= config.AlertDecreaseRate * deltaTime;
