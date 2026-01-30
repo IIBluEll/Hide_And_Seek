@@ -34,7 +34,7 @@ public class ManagaeCalculatePoint
         {
             Debug.Log("[SearchPoint] 선택된 Zone: " + tSelectZone.ZoneID);
 
-            if ( areaAlert > 50f )
+            if ( areaAlert > 0.6f )
             {
                 // 경계도가 높으면 은신처 수색
                 return tSelectZone.GetNearHidingSpot(_playerTransform.position);

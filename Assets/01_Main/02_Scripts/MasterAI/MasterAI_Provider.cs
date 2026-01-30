@@ -69,9 +69,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
         float tDist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
 
-        bool tIsRetreating = _chaseAI.IsRetreating();
+        bool itsTransitioning = _chaseAI.IsRetreating() || _chaseAI.CurrentState == CHASEAI_STATE.COMMUTE;
 
-        _gaugeSystem.UpdateGauages(Time.deltaTime , tDist , tIsRetreating, _chaseAI.IsChasing() , _currentPhase, _configData);
+        _gaugeSystem.UpdateGauages(Time.deltaTime , tDist ,  _chaseAI.IsChasing() , itsTransitioning , _currentPhase , _configData);
 
         _currentStateLogic?.Update(this);
     }
@@ -103,6 +103,12 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     public void OrderSpawn()
     {
+        if(_chaseAI.gameObject.activeSelf)
+        {
+            Debug.Log("[Master AI] 추격 AI가 이미 활성화 상태입니다.");
+            return;
+        }
+
         Debug.Log("[Master AI] 추격 AI 스폰 명령");
         ZoneInfo tSpawnZone = _zoneManager.GetRandomZoneNotPlayer(true);
 
@@ -143,7 +149,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // 추격 AI가 퇴근 완료했을때
     public void OnChaseAIVanish()
     {
-        _currentPhase = MASTERAI_PHASE.DORMANT;
+        ChangePhase(MASTERAI_PHASE.DORMANT);
     }
     #endregion
 
@@ -193,6 +199,12 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     public void ReportPlayerContact()
     {
         _lastContactTime = Time.time;
+
+        if(_currentPhase == MASTERAI_PHASE.DORMANT)
+        {
+            ChangePhase(MASTERAI_PHASE.ACTIVE);
+        }
+
         _gaugeSystem.OnPlayerContact(Time.deltaTime, _configData);
     }
 

@@ -50,7 +50,7 @@ public class MasterState_Active : IMasterState
 
         if(ShouldRetreat(masterAI))
         {
-            masterAI.ChangePhase(MASTERAI_PHASE.DORMANT);
+            masterAI.OrderRetreat();
             return;
         }
 
@@ -63,7 +63,6 @@ public class MasterState_Active : IMasterState
 
     public void Exit(MasterAI_Provider masterAI)
     {
-        masterAI.OrderRetreat();
     }
 
     // 퇴근 조건 판단 로직

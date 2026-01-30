@@ -12,6 +12,8 @@ public enum CHASEAI_STATE
     CHASE,
     INVESTIGATE,
     RETREAT,
+    COMMUTE,
+    DEACTIVATE
 }
 
 [RequireComponent(typeof(NavMeshAgent))]
@@ -23,7 +25,7 @@ public class ChaseAI_Controller : MonoBehaviour
     [Space(10f), Header("이동")]
     [SerializeField] private float _walkSpeed = 4f;
     [SerializeField] private float _runSpeed = 7f;
-    [SerializeField] private float _idleWaitTime = 3f;
+    [SerializeField] private float _idleWaitTime = 2f;
 
     [Space(10f), Header("시야")]
     [SerializeField] private float _sightRange = 15f;
@@ -108,6 +110,12 @@ public class ChaseAI_Controller : MonoBehaviour
         return _currentState == CHASEAI_STATE.RETREAT;
     }
 
+    //퇴근 완료인지
+    public bool IsVanished()
+    {
+        return _currentState == CHASEAI_STATE.DEACTIVATE;
+    }
+
     // 추격 상태인지 체크
     public bool IsChasing()
     {
@@ -129,7 +137,7 @@ public class ChaseAI_Controller : MonoBehaviour
     // 소음이 들렸을 때
     public void InvestgateNoise(Vector3 targetPos)
     {
-        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT)
+        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT || _currentState == CHASEAI_STATE.COMMUTE)
         {
             return;
         }
@@ -144,7 +152,7 @@ public class ChaseAI_Controller : MonoBehaviour
     // 퇴근 명령 -> 벤트로 이동
     public void OrderRetreat(Vector3 ventPos)
     {
-        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT )
+        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT || _currentState == CHASEAI_STATE.DEACTIVATE)
         {
             return;
         }
@@ -162,9 +170,10 @@ public class ChaseAI_Controller : MonoBehaviour
         gameObject.SetActive(true);
         _agent.Warp(position);
 
-        ChangeState(CHASEAI_STATE.IDLE);
+        ChangeState(CHASEAI_STATE.COMMUTE);
 
-        Debug.Log("[Chase AI] 스폰함");
+        Debug.Log("[Chase AI] 스폰중");
+        WaitAndSwitchToIdle_async().Forget();
     }
 
     // 퇴근
@@ -175,7 +184,7 @@ public class ChaseAI_Controller : MonoBehaviour
         _agent.ResetPath();
 
         gameObject.SetActive(false);
-        ChangeState(CHASEAI_STATE.IDLE);
+        ChangeState(CHASEAI_STATE.DEACTIVATE);
 
         Debug.Log("[Chase AI] 추격 AI 퇴근 완료");
     }
@@ -237,7 +246,10 @@ public class ChaseAI_Controller : MonoBehaviour
         _isWaiting = true;
 
         //TODO : 추격AI가 두리번 또는 무언가 뒤지는 애니메이션
-        Debug.Log("[Alien] 도착. 주위를 살피는 중...");
+        if ( _currentState == CHASEAI_STATE.COMMUTE )
+            Debug.Log("[Chase AI] 출근 완료. 대기 중...");
+        else
+            Debug.Log("[Chase AI] 목적지 도착. 주위를 살피는 중...");
 
         _waitCts = new CancellationTokenSource();
         var linkCts = CancellationTokenSource.CreateLinkedTokenSource(_waitCts.Token, this.GetCancellationTokenOnDestroy());

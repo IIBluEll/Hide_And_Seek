@@ -13,9 +13,9 @@ public class ManageGauage
 
     public float AlertRatio => Mathf.Clamp01(AreaAlert / 100f);
 
-    public void UpdateGauages(float deltaTime, float distanceToPlayer, bool isChasing, bool isRetreating, MASTERAI_PHASE currentPhase, MasterAI_Config config )
+    public void UpdateGauages(float deltaTime, float distanceToPlayer, bool isChasing, bool isTransitioning , MASTERAI_PHASE currentPhase, MasterAI_Config config )
     {
-        if(isRetreating)
+        if( isTransitioning )
         {
             return;
         }    
