@@ -3,6 +3,17 @@ using System;
 using System.Threading;
 using UnityEngine;
 
+public enum CHASEAI_STATE
+{
+    IDLE,
+    PATROL,
+    CHASE,
+    INVESTIGATE,
+    RETREAT,
+    COMMUTE,
+    DEACTIVATE
+}
+
 public class ManageChaseStateMachine
 {
     private CHASEAI_STATE _currentState = CHASEAI_STATE.IDLE;
@@ -200,10 +211,7 @@ public class ManageChaseStateMachine
             await UniTask.Delay(TimeSpan.FromSeconds(_idleWaitTime) , cancellationToken: linkCts.Token);
             ChangeState(CHASEAI_STATE.IDLE);
         }
-        catch ( OperationCanceledException ex) 
-        {
-            Debug.LogError($"{ex.Message}");
-        }
+        catch ( OperationCanceledException) {}
         finally
         {
             _isWaiting = false;
@@ -262,7 +270,7 @@ public class ManageChaseStateMachine
         }
         else
         { // 시야에서 놓침
-            if(!_chaseMovement.IsPathPending() && !_chaseMovement.IsArrived())
+            if( _chaseMovement.IsArrived() )
             {
                 Debug.Log("플레이어 놓침. 마지막 위치 수색 전환");
                 ChangeState(CHASEAI_STATE.INVESTIGATE);

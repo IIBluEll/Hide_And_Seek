@@ -4,18 +4,6 @@ using UnityEngine.AI;
 using System;
 using System.Threading;
 
-//TODO : 출근중, 퇴근중, 퇴근완료 상태 추가 필요
-public enum CHASEAI_STATE
-{
-    IDLE,
-    PATROL,
-    CHASE,
-    INVESTIGATE,
-    RETREAT,
-    COMMUTE,
-    DEACTIVATE
-}
-
 [RequireComponent(typeof(NavMeshAgent))]
 public class ChaseAI_Controller : MonoBehaviour
 {
