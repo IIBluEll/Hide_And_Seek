@@ -12,7 +12,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     [SerializeField] private MasterAI_Config _configData;
 
     [Header("참조")]
-    [SerializeField] private ChaseAI_Controller _chaseAI;
+    [SerializeField] private ChaseAIController _chaseAI;
     [SerializeField] private Transform _playerTransform;
     [SerializeField] private LayerMask _zoneLayerMask;
 
@@ -32,7 +32,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     //Debug
     public MasterAI_Config ConfigData => _configData;
     public ManageGauage GaugeSystem => _gaugeSystem;
-    public ChaseAI_Controller ChaseAI => _chaseAI;
+    public ChaseAIController ChaseAI => _chaseAI;
     public ManageZone ZoneMng => _zoneManager;
     public float LastContactTime => _lastContactTime;
 
@@ -64,6 +64,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     {
         if ( _chaseAI == null || _playerTransform == null )
         {
+            Debug.LogError("추격AI 및 플레이어 연결되었는지 확인바람");
             return;
         }
 
