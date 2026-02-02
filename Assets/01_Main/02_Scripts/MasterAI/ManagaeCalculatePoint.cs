@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 
-public class Managae_CalculatePoint
+public class ManagaeCalculatePoint
 {
     private Transform _chaseTransform;
     private Transform _playerTransform;
@@ -13,7 +13,7 @@ public class Managae_CalculatePoint
     //TODO : 벤트 수색 반경을 MasterAI에서 받아올것인가?
     private float _maxVentSearch = 20f;
 
-    public Managae_CalculatePoint(Transform chaseAiTransform ,Transform playerTransform, LayerMask zoneLayerMask, float maxSearchRadius, float minSearchRadius)
+    public ManagaeCalculatePoint(Transform chaseAiTransform ,Transform playerTransform, LayerMask zoneLayerMask, float maxSearchRadius, float minSearchRadius)
     {
         _chaseTransform = chaseAiTransform;
         _playerTransform = playerTransform;
@@ -34,7 +34,7 @@ public class Managae_CalculatePoint
         {
             Debug.Log("[SearchPoint] 선택된 Zone: " + tSelectZone.ZoneID);
 
-            if ( areaAlert > 50f )
+            if ( areaAlert > 0.6f )
             {
                 // 경계도가 높으면 은신처 수색
                 return tSelectZone.GetNearHidingSpot(_playerTransform.position);

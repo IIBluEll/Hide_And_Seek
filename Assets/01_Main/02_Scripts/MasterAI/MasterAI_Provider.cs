@@ -1,8 +1,5 @@
 ﻿using HM.CodeBase;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-
 public enum MASTERAI_PHASE
 {
     ACTIVE,
@@ -11,21 +8,20 @@ public enum MASTERAI_PHASE
 
 public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 {
+    [Header("난이도 설정 데이터")]
+    [SerializeField] private MasterAI_Config _configData;
+
     [Header("참조")]
-    [SerializeField] private ChaseAI_Controller _chaseAI;
+    [SerializeField] private ChaseAIController _chaseAI;
     [SerializeField] private Transform _playerTransform;
     [SerializeField] private LayerMask _zoneLayerMask;
 
-    [Space(10f), Header("수색 반경")]
-    [SerializeField] private float _maxSearch = 25f;
-    [SerializeField] private float _minSearch = 5f;
-
     [Space(10f), Header("시스템 모듈")]
-    [SerializeField] private Manage_Gauage _gaugeSystem;
+    [SerializeField] private ManageGauage _gaugeSystem;
     [SerializeField] private ManageZone _zoneManager;
     [SerializeField] private MasterState_Dormant _dormantState;
     [SerializeField] private MasterState_Active _activeState;
-    [SerializeField] private Managae_CalculatePoint _manage_SearchPoint;
+    [SerializeField] private ManagaeCalculatePoint _manage_SearchPoint;
 
     private float _lastContactTime = float.MinValue;
 
@@ -34,8 +30,9 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     private IMasterState _currentStateLogic;
 
     //Debug
-    public Manage_Gauage GaugeSystem => _gaugeSystem;
-    public ChaseAI_Controller ChaseAI => _chaseAI;
+    public MasterAI_Config ConfigData => _configData;
+    public ManageGauage GaugeSystem => _gaugeSystem;
+    public ChaseAIController ChaseAI => _chaseAI;
     public ManageZone ZoneMng => _zoneManager;
     public float LastContactTime => _lastContactTime;
 
@@ -43,6 +40,12 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     private void Start()
     {
+        if ( _configData == null )
+        {
+            Debug.LogError("MasterAI_Data가 할당되지 않았습니다! 기본값 생성 또는 할당 필요.");
+            return;
+        }
+
         _zoneManager.Initialize();
         _gaugeSystem.Reset();
 
@@ -52,7 +55,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
             _chaseAI.Vanish();
         }
 
-        _manage_SearchPoint = new Managae_CalculatePoint(_chaseAI.transform , _playerTransform , _zoneLayerMask , _maxSearch , _minSearch);
+        _manage_SearchPoint = new ManagaeCalculatePoint(_chaseAI.transform , _playerTransform , _zoneLayerMask , _configData.MaxSearchRadius , _configData.MinSearchRadius);
 
         ChangePhase(MASTERAI_PHASE.DORMANT);
     }
@@ -61,12 +64,15 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     {
         if ( _chaseAI == null || _playerTransform == null )
         {
+            Debug.LogError("추격AI 및 플레이어 연결되었는지 확인바람");
             return;
         }
 
-        float dist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
+        float tDist = Vector3.Distance(_playerTransform.position, _chaseAI.transform.position);
 
-        _gaugeSystem.UpdateGauages(Time.deltaTime , dist , _chaseAI.IsChasing() , _currentPhase);
+        bool itsTransitioning = _chaseAI.IsRetreating() || _chaseAI.CurrentState == CHASEAI_STATE.COMMUTE;
+
+        _gaugeSystem.UpdateGauages(Time.deltaTime , tDist ,  _chaseAI.IsChasing() , itsTransitioning , _currentPhase , _configData);
 
         _currentStateLogic?.Update(this);
     }
@@ -98,6 +104,12 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
 
     public void OrderSpawn()
     {
+        if(_chaseAI.gameObject.activeSelf)
+        {
+            Debug.Log("[Master AI] 추격 AI가 이미 활성화 상태입니다.");
+            return;
+        }
+
         Debug.Log("[Master AI] 추격 AI 스폰 명령");
         ZoneInfo tSpawnZone = _zoneManager.GetRandomZoneNotPlayer(true);
 
@@ -138,7 +150,7 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // 추격 AI가 퇴근 완료했을때
     public void OnChaseAIVanish()
     {
-        _currentPhase = MASTERAI_PHASE.DORMANT;
+        ChangePhase(MASTERAI_PHASE.DORMANT);
     }
     #endregion
 
@@ -162,15 +174,15 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // 소음 발생시
     public void ReportNoise(Vector3 noisePos , float loudness)
     {
-        float hearingDistance = 20.0f * loudness;
+        float hearingDistance = _configData.HearingDistanceMultiplier * loudness;
         float distToAI = Vector3.Distance(noisePos, _chaseAI.transform.position);
 
         if ( distToAI <= hearingDistance )
         {
             // 들림! -> 경계도 상승 및 조사 명령
-            float increaseAmount = loudness * 30f;
-            _gaugeSystem.IncreaseAlert(increaseAmount);
-            _gaugeSystem.IncreaseStress(increaseAmount * 0.2f);
+            float increaseAmount = loudness * _configData.NoiseReactionMultiplier;
+            _gaugeSystem.IncreaseAlert(increaseAmount, _configData);
+            _gaugeSystem.IncreaseStress(increaseAmount * 0.2f, _configData);
 
             if ( _currentPhase == MASTERAI_PHASE.ACTIVE )
             {
@@ -188,7 +200,13 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     public void ReportPlayerContact()
     {
         _lastContactTime = Time.time;
-        _gaugeSystem.OnPlayerContact(Time.deltaTime);
+
+        if(_currentPhase == MASTERAI_PHASE.DORMANT)
+        {
+            ChangePhase(MASTERAI_PHASE.ACTIVE);
+        }
+
+        _gaugeSystem.OnPlayerContact(Time.deltaTime, _configData);
     }
 
     #endregion
@@ -196,21 +214,21 @@ public class MasterAI_Provider : ASingletone<MasterAI_Provider>
     // Debug
     private void OnDrawGizmos()
     {
-        if ( _playerTransform == null ) return;
+        //if ( _playerTransform == null ) return;
 
-        // 현재 적용 중인 가변 반경 그리기 (파란색 -> 빨간색 변함)
-        float currentRadius = Mathf.Lerp(_maxSearch, _minSearch, _gaugeSystem.AlertRatio);
+        //// 현재 적용 중인 가변 반경 그리기 (파란색 -> 빨간색 변함)
+        //float currentRadius = Mathf.Lerp(_maxSearch, _minSearch, _gaugeSystem.AlertRatio);
 
-        Gizmos.color = Color.Lerp(Color.blue , Color.red , _gaugeSystem.AlertRatio);
-        Gizmos.color = new Color(Gizmos.color.r , Gizmos.color.g , Gizmos.color.b , 0.2f); // 반투명
-        Gizmos.DrawWireSphere(_playerTransform.position , currentRadius);
+        //Gizmos.color = Color.Lerp(Color.blue , Color.red , _gaugeSystem.AlertRatio);
+        //Gizmos.color = new Color(Gizmos.color.r , Gizmos.color.g , Gizmos.color.b , 0.2f); // 반투명
+        //Gizmos.DrawWireSphere(_playerTransform.position , currentRadius);
 
-        // 마지막 명령 위치
-        if ( _debugLastTargetPos != Vector3.zero )
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(_debugLastTargetPos , 0.3f);
-            Gizmos.DrawLine(_chaseAI.transform.position , _debugLastTargetPos);
-        }
+        //// 마지막 명령 위치
+        //if ( _debugLastTargetPos != Vector3.zero )
+        //{
+        //    Gizmos.color = Color.red;
+        //    Gizmos.DrawSphere(_debugLastTargetPos , 0.3f);
+        //    Gizmos.DrawLine(_chaseAI.transform.position , _debugLastTargetPos);
+        //}
     }
 }

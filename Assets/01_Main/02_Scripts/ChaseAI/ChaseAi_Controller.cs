@@ -4,6 +4,7 @@ using UnityEngine.AI;
 using System;
 using System.Threading;
 
+//TODO : 출근중, 퇴근중, 퇴근완료 상태 추가 필요
 public enum CHASEAI_STATE
 {
     IDLE,
@@ -11,6 +12,8 @@ public enum CHASEAI_STATE
     CHASE,
     INVESTIGATE,
     RETREAT,
+    COMMUTE,
+    DEACTIVATE
 }
 
 [RequireComponent(typeof(NavMeshAgent))]
@@ -22,7 +25,7 @@ public class ChaseAI_Controller : MonoBehaviour
     [Space(10f), Header("이동")]
     [SerializeField] private float _walkSpeed = 4f;
     [SerializeField] private float _runSpeed = 7f;
-    [SerializeField] private float _idleWaitTime = 3f;
+    [SerializeField] private float _idleWaitTime = 2f;
 
     [Space(10f), Header("시야")]
     [SerializeField] private float _sightRange = 15f;
@@ -107,6 +110,12 @@ public class ChaseAI_Controller : MonoBehaviour
         return _currentState == CHASEAI_STATE.RETREAT;
     }
 
+    //퇴근 완료인지
+    public bool IsVanished()
+    {
+        return _currentState == CHASEAI_STATE.DEACTIVATE;
+    }
+
     // 추격 상태인지 체크
     public bool IsChasing()
     {
@@ -128,7 +137,7 @@ public class ChaseAI_Controller : MonoBehaviour
     // 소음이 들렸을 때
     public void InvestgateNoise(Vector3 targetPos)
     {
-        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT)
+        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT || _currentState == CHASEAI_STATE.COMMUTE)
         {
             return;
         }
@@ -143,7 +152,7 @@ public class ChaseAI_Controller : MonoBehaviour
     // 퇴근 명령 -> 벤트로 이동
     public void OrderRetreat(Vector3 ventPos)
     {
-        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT )
+        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT || _currentState == CHASEAI_STATE.DEACTIVATE)
         {
             return;
         }
@@ -161,9 +170,10 @@ public class ChaseAI_Controller : MonoBehaviour
         gameObject.SetActive(true);
         _agent.Warp(position);
 
-        ChangeState(CHASEAI_STATE.IDLE);
+        ChangeState(CHASEAI_STATE.COMMUTE);
 
-        Debug.Log("[Chase AI] 스폰함");
+        Debug.Log("[Chase AI] 스폰중");
+        WaitAndSwitchToIdle_async().Forget();
     }
 
     // 퇴근
@@ -174,7 +184,7 @@ public class ChaseAI_Controller : MonoBehaviour
         _agent.ResetPath();
 
         gameObject.SetActive(false);
-        ChangeState(CHASEAI_STATE.IDLE);
+        ChangeState(CHASEAI_STATE.DEACTIVATE);
 
         Debug.Log("[Chase AI] 추격 AI 퇴근 완료");
     }
@@ -236,7 +246,10 @@ public class ChaseAI_Controller : MonoBehaviour
         _isWaiting = true;
 
         //TODO : 추격AI가 두리번 또는 무언가 뒤지는 애니메이션
-        Debug.Log("[Alien] 도착. 주위를 살피는 중...");
+        if ( _currentState == CHASEAI_STATE.COMMUTE )
+            Debug.Log("[Chase AI] 출근 완료. 대기 중...");
+        else
+            Debug.Log("[Chase AI] 목적지 도착. 주위를 살피는 중...");
 
         _waitCts = new CancellationTokenSource();
         var linkCts = CancellationTokenSource.CreateLinkedTokenSource(_waitCts.Token, this.GetCancellationTokenOnDestroy());
@@ -270,33 +283,56 @@ public class ChaseAI_Controller : MonoBehaviour
 
     #region  추격 시스템 로직
 
-    private void DetectPlayer()
+    // 플레이어가 시야에 있는지 체크
+    private bool IsPlayerVisible()
     {
+        if(_targetPlayer == null)
+        {
+            return false;
+        }
+
         // 거리 체크
-        float dist = Vector3.Distance(transform.position, _targetPlayer.position);
-        if ( dist > _sightRange ) return;
+        float tDist = Vector3.Distance(transform.position, _targetPlayer.position);
+        if( tDist > _sightRange )
+        {
+            return false;
+        }
 
-        // 시야각 체크 (앞선 코드와 동일한 로직)
-        Vector3 targetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
-        if ( targetLocal.z < 0 ) return;
+        // 시야각 체크
+        Vector3 tTargetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
+        if( tTargetLocal.z < 0 )
+        {
+            return false;
+        }
 
-        float angleH = Mathf.Atan2(targetLocal.x, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleH) > _horizontalSightAngle * 0.5f ) return;
+        float tAngleH = Mathf.Atan2(tTargetLocal.x, tTargetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(tAngleH) > _horizontalSightAngle * 0.5f ) return false;
 
-        float angleV = Mathf.Atan2(targetLocal.y, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleV) > _verticalSightAngle * 0.5f ) return;
+        float tAngleV = Mathf.Atan2(tTargetLocal.y, tTargetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(tAngleV) > _verticalSightAngle * 0.5f ) return false;
 
         // 장애물 체크
-        Vector3 dir = (_targetPlayer.position - _eyeTransform.position).normalized;
-        if ( !Physics.Raycast(_eyeTransform.position , dir , dist , _obstacleMask) )
+        Vector3 tDir = (_targetPlayer.position - _eyeTransform.position).normalized;
+
+        // 레이캐스트로 장애물 확인
+        if ( Physics.Raycast(_eyeTransform.position, tDir , tDist , _obstacleMask))
         {
-            // [발견!]
+            return false;
+        }
+
+        return true;
+    }
+
+    private void DetectPlayer()
+    {
+        if ( IsPlayerVisible() )
+        {
+            // 발견
             if ( _currentState != CHASEAI_STATE.CHASE )
             {
                 StartChase();
             }
 
-            // [보고] 마스터 AI에게 "나 쟤 보고 있음" 보고 -> 경계도 Max, 스트레스 상승
             MasterAI_Provider.Instance.ReportPlayerContact();
         }
     }
@@ -313,10 +349,23 @@ public class ChaseAI_Controller : MonoBehaviour
     {
         if ( _targetPlayer == null ) return;
 
-        // 추격 중엔 계속 플레이어 위치로 갱신
-        _agent.SetDestination(_targetPlayer.position);
-
-        // TODO: 거리가 너무 멀어지면 추격 포기하고 IDLE/SEARCH로 돌아가는 로직 필요
+        if ( IsPlayerVisible() )
+        {
+            // 플레이어가 시야에 있으면 계속 추격
+            _agent.SetDestination(_targetPlayer.position);
+        }
+        else
+        {
+            // 시야에서 플레이어 놓침
+            if(!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
+            {
+                if(!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
+                {
+                    Debug.Log("플레이어 놓침. 마지막 위치 수색 전환");
+                    ChangeState(CHASEAI_STATE.INVESTIGATE);
+                }
+            }
+        }
     }
 
     #endregion
