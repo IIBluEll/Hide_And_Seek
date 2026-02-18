@@ -3,7 +3,7 @@
 namespace AI.MasterAI
 {
     [CreateAssetMenu(fileName = "MasterAI_Config" , menuName = "AI/MasterAI Config")]
-    public class MasterAI_Config : ScriptableObject
+    public class MasterAI_Configs : ScriptableObject
     {
         [Header("Gauge Settings")]
         [Tooltip("퇴근(Dormant) 기준이 되는 최대 스트레스")]

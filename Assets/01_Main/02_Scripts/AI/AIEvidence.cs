@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace AI
+namespace AI.ChaseAI
 {
     /// <summary>
     /// 추격 AI가 기억하는 단서 정보

@@ -1,18 +1,20 @@
-﻿using UnityEngine;
+﻿using AI.ChaseAI;
+using UnityEngine;
 
 namespace AI.MasterAI
 {
     public class Master_DirectorSystem : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private MasterAI_Config _config;
+        [SerializeField] private MasterAI_Configs _config;
 
         [Space(5f), Header("Sub-Systems")]
         [SerializeField] private Master_GaugeSystem _gaugeSystem;
         [SerializeField] private Master_ZoneSystem _zoneSystem;
 
-        [Space(5f), Header("Target AI")]
-        [SerializeField] private ChaseAIController _chaseAI;
+        [Space(5f), Header("Target")]
+        [SerializeField] private Chase_Controller _chaseAI;
+        [SerializeField] private Transform _playerTransform;
 
         private float _respawnTimer = 0f;
         private bool _isActivated = false;
@@ -58,8 +60,12 @@ namespace AI.MasterAI
 
             _currentPhase = MASTERAI_PHASE.DORMANT;
 
-            //TODO : 추격AI 후퇴 명령
-            //_chaseAi.OrderRetreat();
+            if(_chaseAI.gameObject.activeSelf)
+            {
+                Vector3 tRetreatPos = _zoneSystem.GetNearestRetreatVent(_chaseAI.transform);
+                _chaseAI.OrderRetreat(tRetreatPos);
+            }
+
             _respawnTimer = 0f;
         }
 
@@ -146,11 +152,10 @@ namespace AI.MasterAI
 
         private void SpawnChaseAI()
         {
-            //TODO : 스폰 로직 고도화
-            Vector3 tSpawnPos = RequestPatrolDestination(); // 랜덤 위치 소환
+            Vector3 tSpawnPos = _zoneSystem.GetBestSpawnVent(_playerTransform); 
             _chaseAI.transform.position = tSpawnPos;
             _chaseAI.gameObject.SetActive(true);
-            //_chaseAi.Initialize(_config); // 몬스터 초기화
+            _chaseAI.Initialize(_config); // 몬스터 초기화
         }
     }
 }

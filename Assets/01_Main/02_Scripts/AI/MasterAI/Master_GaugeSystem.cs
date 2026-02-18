@@ -29,7 +29,7 @@ namespace AI.MasterAI
 
         #region 긴장도, 화남 관리
 
-        public void UpdateGauage(float deltaTime , MasterAI_Config config , CHASEAI_CONFIDENCE_STATE state)
+        public void UpdateGauage(float deltaTime , MasterAI_Configs config , CHASEAI_CONFIDENCE_STATE state)
         {
             float tStressRate = (state == CHASEAI_CONFIDENCE_STATE.HIGH) ? config.StressRate_Chase : config.StressRate_Passive;
 
@@ -58,7 +58,7 @@ namespace AI.MasterAI
 
         #region 추격AI 분노 상태 관리
 
-        public CHASEAI_ANGER_PHASE GetCurrentAngerPhase(MasterAI_Config config)
+        public CHASEAI_ANGER_PHASE GetCurrentAngerPhase(MasterAI_Configs config)
         {
             float tStalkThreshold = config.GetStalkThreshold(_missionProgressRatio);
             float tHuntThreshold = config.GetHuntThreshold(_missionProgressRatio);
@@ -109,7 +109,7 @@ namespace AI.MasterAI
             return _currentAngerPhase;
         }
 
-        public bool IsStressFull(MasterAI_Config config)
+        public bool IsStressFull(MasterAI_Configs config)
         {
             return GlobalStress >= config.MaxStress;
         }
