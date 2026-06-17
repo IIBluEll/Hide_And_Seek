@@ -4,15 +4,6 @@ using UnityEngine.AI;
 using System;
 using System.Threading;
 
-public enum CHASEAI_STATE
-{
-    IDLE,
-    PATROL,
-    CHASE,
-    INVESTIGATE,
-    RETREAT,
-}
-
 [RequireComponent(typeof(NavMeshAgent))]
 public class ChaseAI_Controller : MonoBehaviour
 {
@@ -22,7 +13,7 @@ public class ChaseAI_Controller : MonoBehaviour
     [Space(10f), Header("이동")]
     [SerializeField] private float _walkSpeed = 4f;
     [SerializeField] private float _runSpeed = 7f;
-    [SerializeField] private float _idleWaitTime = 3f;
+    [SerializeField] private float _idleWaitTime = 2f;
 
     [Space(10f), Header("시야")]
     [SerializeField] private float _sightRange = 15f;
@@ -98,9 +89,19 @@ public class ChaseAI_Controller : MonoBehaviour
     // 명령 받을 수 있는 상태 체크
     public bool IsAvailableForCommand()
     {
-        
-
         return gameObject.activeSelf && _currentState == CHASEAI_STATE.IDLE && !_isWaiting;
+    }
+
+    //퇴근 중인지
+    public bool IsRetreating()
+    {
+        return _currentState == CHASEAI_STATE.RETREAT;
+    }
+
+    //퇴근 완료인지
+    public bool IsVanished()
+    {
+        return _currentState == CHASEAI_STATE.DEACTIVATE;
     }
 
     // 추격 상태인지 체크
@@ -124,7 +125,7 @@ public class ChaseAI_Controller : MonoBehaviour
     // 소음이 들렸을 때
     public void InvestgateNoise(Vector3 targetPos)
     {
-        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT)
+        if (_currentState == CHASEAI_STATE.CHASE || _currentState == CHASEAI_STATE.RETREAT || _currentState == CHASEAI_STATE.COMMUTE)
         {
             return;
         }
@@ -139,7 +140,7 @@ public class ChaseAI_Controller : MonoBehaviour
     // 퇴근 명령 -> 벤트로 이동
     public void OrderRetreat(Vector3 ventPos)
     {
-        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT )
+        if (_currentState == CHASEAI_STATE.CHASE || CurrentState == CHASEAI_STATE.RETREAT || _currentState == CHASEAI_STATE.DEACTIVATE)
         {
             return;
         }
@@ -157,9 +158,10 @@ public class ChaseAI_Controller : MonoBehaviour
         gameObject.SetActive(true);
         _agent.Warp(position);
 
-        ChangeState(CHASEAI_STATE.IDLE);
+        ChangeState(CHASEAI_STATE.COMMUTE);
 
-        Debug.Log("[Chase AI] 스폰함");
+        Debug.Log("[Chase AI] 스폰중");
+        WaitAndSwitchToIdle_async().Forget();
     }
 
     // 퇴근
@@ -170,7 +172,7 @@ public class ChaseAI_Controller : MonoBehaviour
         _agent.ResetPath();
 
         gameObject.SetActive(false);
-        ChangeState(CHASEAI_STATE.IDLE);
+        ChangeState(CHASEAI_STATE.DEACTIVATE);
 
         Debug.Log("[Chase AI] 추격 AI 퇴근 완료");
     }
@@ -232,7 +234,10 @@ public class ChaseAI_Controller : MonoBehaviour
         _isWaiting = true;
 
         //TODO : 추격AI가 두리번 또는 무언가 뒤지는 애니메이션
-        Debug.Log("[Alien] 도착. 주위를 살피는 중...");
+        if ( _currentState == CHASEAI_STATE.COMMUTE )
+            Debug.Log("[Chase AI] 출근 완료. 대기 중...");
+        else
+            Debug.Log("[Chase AI] 목적지 도착. 주위를 살피는 중...");
 
         _waitCts = new CancellationTokenSource();
         var linkCts = CancellationTokenSource.CreateLinkedTokenSource(_waitCts.Token, this.GetCancellationTokenOnDestroy());
@@ -266,33 +271,56 @@ public class ChaseAI_Controller : MonoBehaviour
 
     #region  추격 시스템 로직
 
-    private void DetectPlayer()
+    // 플레이어가 시야에 있는지 체크
+    private bool IsPlayerVisible()
     {
+        if(_targetPlayer == null)
+        {
+            return false;
+        }
+
         // 거리 체크
-        float dist = Vector3.Distance(transform.position, _targetPlayer.position);
-        if ( dist > _sightRange ) return;
+        float tDist = Vector3.Distance(transform.position, _targetPlayer.position);
+        if( tDist > _sightRange )
+        {
+            return false;
+        }
 
-        // 시야각 체크 (앞선 코드와 동일한 로직)
-        Vector3 targetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
-        if ( targetLocal.z < 0 ) return;
+        // 시야각 체크
+        Vector3 tTargetLocal = _eyeTransform.InverseTransformPoint(_targetPlayer.position);
+        if( tTargetLocal.z < 0 )
+        {
+            return false;
+        }
 
-        float angleH = Mathf.Atan2(targetLocal.x, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleH) > _horizontalSightAngle * 0.5f ) return;
+        float tAngleH = Mathf.Atan2(tTargetLocal.x, tTargetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(tAngleH) > _horizontalSightAngle * 0.5f ) return false;
 
-        float angleV = Mathf.Atan2(targetLocal.y, targetLocal.z) * Mathf.Rad2Deg;
-        if ( Mathf.Abs(angleV) > _verticalSightAngle * 0.5f ) return;
+        float tAngleV = Mathf.Atan2(tTargetLocal.y, tTargetLocal.z) * Mathf.Rad2Deg;
+        if ( Mathf.Abs(tAngleV) > _verticalSightAngle * 0.5f ) return false;
 
         // 장애물 체크
-        Vector3 dir = (_targetPlayer.position - _eyeTransform.position).normalized;
-        if ( !Physics.Raycast(_eyeTransform.position , dir , dist , _obstacleMask) )
+        Vector3 tDir = (_targetPlayer.position - _eyeTransform.position).normalized;
+
+        // 레이캐스트로 장애물 확인
+        if ( Physics.Raycast(_eyeTransform.position, tDir , tDist , _obstacleMask))
         {
-            // [발견!]
+            return false;
+        }
+
+        return true;
+    }
+
+    private void DetectPlayer()
+    {
+        if ( IsPlayerVisible() )
+        {
+            // 발견
             if ( _currentState != CHASEAI_STATE.CHASE )
             {
                 StartChase();
             }
 
-            // [보고] 마스터 AI에게 "나 쟤 보고 있음" 보고 -> 경계도 Max, 스트레스 상승
             MasterAI_Provider.Instance.ReportPlayerContact();
         }
     }
@@ -309,59 +337,72 @@ public class ChaseAI_Controller : MonoBehaviour
     {
         if ( _targetPlayer == null ) return;
 
-        // 추격 중엔 계속 플레이어 위치로 갱신
-        _agent.SetDestination(_targetPlayer.position);
-
-        // TODO: 거리가 너무 멀어지면 추격 포기하고 IDLE/SEARCH로 돌아가는 로직 필요
+        if ( IsPlayerVisible() )
+        {
+            // 플레이어가 시야에 있으면 계속 추격
+            _agent.SetDestination(_targetPlayer.position);
+        }
+        else
+        {
+            // 시야에서 플레이어 놓침
+            if(!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
+            {
+                if(!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
+                {
+                    Debug.Log("플레이어 놓침. 마지막 위치 수색 전환");
+                    ChangeState(CHASEAI_STATE.INVESTIGATE);
+                }
+            }
+        }
     }
 
     #endregion
 
-    // private void OnDrawGizmos()
-    // {
-    //     // 눈 위치가 없으면 아직 실행 전이므로 transform 사용, 있으면 _eyeTransform 사용
-    //     Transform eye = (_eyeTransform == null) ? transform : _eyeTransform;
-    //     Vector3 origin = eye.position;
+    private void OnDrawGizmos()
+    {
+        // 눈 위치가 없으면 아직 실행 전이므로 transform 사용, 있으면 _eyeTransform 사용
+        Transform eye = (_eyeTransform == null) ? transform : _eyeTransform;
+        Vector3 origin = eye.position;
 
-    //     // 1. 기본 거리 범위 그리기 (연한 노란색 구체)
-    //     Gizmos.color = new Color(1f, 1f, 0f, 0.2f); // 반투명 노랑
-    //     Gizmos.DrawWireSphere(origin, _sightRange);
+        // 1. 기본 거리 범위 그리기 (연한 노란색 구체)
+        Gizmos.color = new Color(1f , 1f , 0f , 0.2f); // 반투명 노랑
+        Gizmos.DrawWireSphere(origin , _sightRange);
 
-    //     // 2. 시야각 계산을 위한 준비
-    //     Gizmos.color = Color.cyan; // 시야각은 하늘색으로 표시
-    //     float halfH = _horizontalSightAngle * 0.5f;
-    //     float halfV = _verticalSightAngle * 0.5f;
-    //     Quaternion eyeRotation = eye.rotation;
+        // 2. 시야각 계산을 위한 준비
+        Gizmos.color = Color.cyan; // 시야각은 하늘색으로 표시
+        float halfH = _horizontalSightAngle * 0.5f;
+        float halfV = _verticalSightAngle * 0.5f;
+        Quaternion eyeRotation = eye.rotation;
 
-    //     // 3. 네 귀퉁이의 방향 벡터 계산 (쿼터니언 회전 조합)
-    //     // eyeRotation: 현재 눈의 방향
-    //     // Quaternion.Euler(-halfV, -halfH, 0): 로컬 기준 위로 V도, 왼쪽으로 H도 회전
-    //     Vector3 dirTL = eyeRotation * Quaternion.Euler(-halfV, -halfH, 0) * Vector3.forward; // Top-Left
-    //     Vector3 dirTR = eyeRotation * Quaternion.Euler(-halfV, halfH, 0) * Vector3.forward; // Top-Right
-    //     Vector3 dirBL = eyeRotation * Quaternion.Euler(halfV, -halfH, 0) * Vector3.forward; // Bottom-Left
-    //     Vector3 dirBR = eyeRotation * Quaternion.Euler(halfV, halfH, 0) * Vector3.forward; // Bottom-Right
+        // 3. 네 귀퉁이의 방향 벡터 계산 (쿼터니언 회전 조합)
+        // eyeRotation: 현재 눈의 방향
+        // Quaternion.Euler(-halfV, -halfH, 0): 로컬 기준 위로 V도, 왼쪽으로 H도 회전
+        Vector3 dirTL = eyeRotation * Quaternion.Euler(-halfV, -halfH, 0) * Vector3.forward; // Top-Left
+        Vector3 dirTR = eyeRotation * Quaternion.Euler(-halfV, halfH, 0) * Vector3.forward; // Top-Right
+        Vector3 dirBL = eyeRotation * Quaternion.Euler(halfV, -halfH, 0) * Vector3.forward; // Bottom-Left
+        Vector3 dirBR = eyeRotation * Quaternion.Euler(halfV, halfH, 0) * Vector3.forward; // Bottom-Right
 
-    //     // 4. 최대 거리 지점 좌표 계산
-    //     Vector3 farTL = origin + dirTL * _sightRange;
-    //     Vector3 farTR = origin + dirTR * _sightRange;
-    //     Vector3 farBL = origin + dirBL * _sightRange;
-    //     Vector3 farBR = origin + dirBR * _sightRange;
+        // 4. 최대 거리 지점 좌표 계산
+        Vector3 farTL = origin + dirTL * _sightRange;
+        Vector3 farTR = origin + dirTR * _sightRange;
+        Vector3 farBL = origin + dirBL * _sightRange;
+        Vector3 farBR = origin + dirBR * _sightRange;
 
-    //     // 5. 선 그리기
-    //     // 5-1. 눈에서 네 귀퉁이로 뻗어나가는 레이(Ray)
-    //     Gizmos.DrawLine(origin, farTL);
-    //     Gizmos.DrawLine(origin, farTR);
-    //     Gizmos.DrawLine(origin, farBL);
-    //     Gizmos.DrawLine(origin, farBR);
+        // 5. 선 그리기
+        // 5-1. 눈에서 네 귀퉁이로 뻗어나가는 레이(Ray)
+        Gizmos.DrawLine(origin , farTL);
+        Gizmos.DrawLine(origin , farTR);
+        Gizmos.DrawLine(origin , farBL);
+        Gizmos.DrawLine(origin , farBR);
 
-    //     // 5-2. 끝부분을 연결하여 사각형 프레임 만들기
-    //     Gizmos.DrawLine(farTL, farTR); // 상단 가로선
-    //     Gizmos.DrawLine(farTR, farBR); // 우측 세로선
-    //     Gizmos.DrawLine(farBR, farBL); // 하단 가로선
-    //     Gizmos.DrawLine(farBL, farTL); // 좌측 세로선
+        // 5-2. 끝부분을 연결하여 사각형 프레임 만들기
+        Gizmos.DrawLine(farTL , farTR); // 상단 가로선
+        Gizmos.DrawLine(farTR , farBR); // 우측 세로선
+        Gizmos.DrawLine(farBR , farBL); // 하단 가로선
+        Gizmos.DrawLine(farBL , farTL); // 좌측 세로선
 
-    //     // 6. (선택사항) 중앙 정면 방향 표시 (빨간색)
-    //     Gizmos.color = Color.red;
-    //     Gizmos.DrawRay(origin, eye.forward * _sightRange);
-    // }
+        // 6. (선택사항) 중앙 정면 방향 표시 (빨간색)
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(origin , eye.forward * _sightRange);
+    }
 }
